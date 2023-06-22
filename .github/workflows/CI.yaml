@@ -1,4 +1,4 @@
-name: CI with Gradle
+name: api.kusitms.com CI
 
 on:
   pull_request:
@@ -9,8 +9,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: kusitms-test-db
+          POSTGRES_USER: kustims-test-user
+          POSTGRES_PASSWORD: kusitmstestpassword
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+
     steps:
-      #jdk 세팅
       - uses: actions/checkout@v3
       - name: Set up JDK 11
         uses: actions/setup-java@v3
@@ -18,7 +28,6 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      #gradle 캐싱
       - name: Gradle Caching
         uses: actions/cache@v3
         with:
@@ -28,11 +37,26 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+
       ### CI
-      #gradlew 권한 추가
       - name: Grant Execute Permission For Gradlew
         run: chmod +x gradlew
 
-      #test를 제외한 프로젝트 빌드
       - name: Build With Gradle
         run: ./gradlew build -x test
+
+      - name: Make application-test.properties
+        run: |
+          cd ./src/test/resources
+          touch ./application-test.yml
+          echo "${{ secrets.PROPERTIES_TEST }}" > ./application-test.properties
+        shell: bash
+
+      - name: Test with Gradle
+        run: ./gradlew test -Ptest-postgres
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: ${{ always() }}
+        with:
+          files: build/test-results/**/*.xml
