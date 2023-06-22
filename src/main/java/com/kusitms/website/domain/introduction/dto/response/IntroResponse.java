@@ -17,9 +17,17 @@ public class IntroResponse {
     @Schema(description = "배너 내용", example = "KUSITMS 27기 리크루팅 종료")
     private String bannerContent;
 
-    @JsonProperty("count_intro")
-    @Schema(description = "학회 정보 : 누적 숫자")
-    private CountIntroResponse countIntro;
+    @JsonProperty("member_count")
+    @Schema(description = "누적 학회원 수", example = "1432")
+    private Long memberCount;
+
+    @JsonProperty("project_count")
+    @Schema(description = "누적 프로젝트 수", example = "322")
+    private Long projectCount;
+
+    @JsonProperty("university_count")
+    @Schema(description = "누적 대학 수", example = "78")
+    private Long universityCount;
 
     @JsonProperty("intro_youtube_link")
     @Schema(description = "학회 소개 영상", example = "https://www.youtube.com/")
@@ -37,7 +45,7 @@ public class IntroResponse {
     @Schema(description = "ob 초청 강연자 소개")
     private List<OBLectureResponse> obLecture;
 
-    @JsonProperty("partnership")
-    @Schema(description = "파트너사 소개")
-    private List<PartnershipResponse> partnership;
+    @JsonProperty("partner_logo_url")
+    @Schema(description = "파트너사 소개 이미지 URL")
+    private String partnerLogoUrl;
 }

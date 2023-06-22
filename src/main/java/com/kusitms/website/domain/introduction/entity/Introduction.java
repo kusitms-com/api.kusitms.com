@@ -37,6 +37,10 @@ public class Introduction {
     @Column(name = "intro_youtube_link")
     private String introYoutubeLink;
 
+    // 파트너사 이미지
+    @Column(name = "partner_image_url")
+    private String partnerImageUrl;
+
     // 운영진 소개
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
     private List<ManageTeam> manageTeam = new ArrayList<>();
@@ -49,20 +53,18 @@ public class Introduction {
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
     private List<OBLecture> obLecture = new ArrayList<>();
 
-    // 파트너사
-    @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
-    private List<Partnership> partnership = new ArrayList<>();
 
     @Builder
     public Introduction(Long bannerCardinal, BannerStatus bannerStatus,
-                        Long memberCount, Long projectCount,
-                        Long universityCount, String introYoutubeLink)
+                        Long memberCount, Long projectCount, Long universityCount,
+                        String partnerImageUrl, String introYoutubeLink)
     {
         this.bannerCardinal = bannerCardinal;
         this.bannerStatus = bannerStatus;
         this.memberCount = memberCount;
         this.projectCount = projectCount;
         this.universityCount = universityCount;
+        this.partnerImageUrl = partnerImageUrl;
         this.introYoutubeLink = introYoutubeLink;
     }
 }
