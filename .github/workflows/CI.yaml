@@ -1,4 +1,4 @@
-name: CI with Gradle
+name: api.kusitms.com CI
 
 on:
   pull_request:

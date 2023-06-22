@@ -1,4 +1,4 @@
-name: CD
+name: api.kusitms.com CD
 
 on:
   push:
