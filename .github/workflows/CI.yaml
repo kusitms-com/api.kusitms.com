@@ -45,11 +45,11 @@ jobs:
       - name: Build With Gradle
         run: ./gradlew build -x test
 
-      - name: Make application-test.yml
+      - name: Make application-test.properties
         run: |
           cd ./src/test/resources
           touch ./application-test.yml
-          echo "${{ secrets.PROPERTIES_TEST }}" > ./application-test.yml
+          echo "${{ secrets.PROPERTIES_TEST }}" > ./application-test.properties
         shell: bash
 
       - name: Test with Gradle
