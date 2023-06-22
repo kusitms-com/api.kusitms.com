@@ -12,8 +12,13 @@ public class IntroService {
     private final IntroRepository introRepository;
 
     @Transactional(readOnly = true)
-    public IntroResponse getIntro() {
+    public IntroResponse getIntroduction() {
         return null;
+    }
+
+    @Transactional()
+    public void updateIntroduction() {
+        return;
     }
 
 }
