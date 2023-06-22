@@ -7,6 +7,10 @@ import lombok.Getter;
 @Getter
 @Schema
 public class PartnershipResponse {
+    @JsonProperty("name")
+    @Schema(description = "파트너사 이름", example = "(주) 큐시즘")
+    private String name;
+
     @JsonProperty("logo_url")
     @Schema(description = "파트너사 로고 사진", example = "https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/partnership/파트너사1.jpg")
     private String logoUrl;

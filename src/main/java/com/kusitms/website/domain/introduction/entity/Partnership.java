@@ -16,6 +16,9 @@ public class Partnership {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long partnerId;
 
+    @Column(name = "name")
+    private String name;
+
     @Column(name = "image_url")
     private String imageUrl;
 
@@ -24,9 +27,10 @@ public class Partnership {
     private Introduction introduction;
 
     @Builder
-    public Partnership(Introduction introduction, String imageUrl) {
+    public Partnership(Introduction introduction, String name, String imageUrl) {
         this.introduction = introduction;
         introduction.getPartnership().add(this);
+        this.name = name;
         this.imageUrl = imageUrl;
     }
 }
