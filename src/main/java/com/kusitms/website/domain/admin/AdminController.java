@@ -147,7 +147,7 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse());
     }
 
-    @GetMapping("/test/review")
+    @GetMapping("/admin/review")
     @Operation(summary = "리뷰 리스트 (test db)", description = "리뷰의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -157,7 +157,7 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse(adminService.getReviews()));
     }
 
-    @GetMapping("/test/meetup")
+    @GetMapping("/admin/meetup")
     @Operation(summary = "밋업데이 프로젝트 리스트(test db)", description = "밋업데이 프로젝트의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -168,7 +168,7 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse(adminService.getMeetupProjects()));
     }
 
-    @GetMapping("/test/meetup/{meetup_id}")
+    @GetMapping("/admin/meetup/{meetup_id}")
     @Operation(summary = "밋업데이 프로젝트 상세 조회(test db)", description = "밋업데이 프로젝트의 상세 정보를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -178,7 +178,7 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse(adminService.getMeetupProject(meetupId)));
     }
 
-    @GetMapping("/test/corporate")
+    @GetMapping("/admin/corporate")
     @Operation(summary = "기업 프로젝트 리스트(test db)", description = "기업 프로젝트의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
