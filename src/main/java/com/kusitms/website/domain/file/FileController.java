@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-
 @Hidden
 @RestController
 @RequestMapping("/api/files")
@@ -20,7 +18,8 @@ public class FileController {
     private final S3Service s3Service;
 
     @PostMapping()
-    public ResponseEntity<BaseResponse> postFile(@RequestPart("file_request") MultipartFile fileRequest) throws IOException {
-        return ResponseEntity.ok(new BaseResponse(s3Service.uploadFile(fileRequest, "upload")));
+    public ResponseEntity<BaseResponse> postFile(@RequestPart("file_request") MultipartFile fileRequest,
+                                                 @RequestPart("directory_name") String directoryName) {
+        return ResponseEntity.ok(new BaseResponse(s3Service.uploadFile(fileRequest, directoryName)));
     }
 }
