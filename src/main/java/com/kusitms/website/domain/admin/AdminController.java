@@ -70,6 +70,17 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse());
     }
 
+    @DeleteMapping(value = "/admin/projects/corporate/{id}")
+    @Operation(summary = "기업 프로젝트 정보 삭제", description = "기업 프로젝트의 정보를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> deleteCorporateProject(@PathVariable("id") Long corporateId) {
+        adminService.deleteCorporate(corporateId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
     @PostMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "밋업데이 프로젝트 정보 등록", description = "밋업데이 프로젝트의 정보를 등록합니다.")
     @ApiResponses(value = {
@@ -89,6 +100,17 @@ public class AdminController {
     })
     public ResponseEntity<BaseResponse> updateMeetupProject(@ModelAttribute MeetupRequest request) {
         adminService.updateMeetup(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @DeleteMapping(value = "/admin/projects/meetup/{id}")
+    @Operation(summary = "밋업데이 정보 삭제", description = "밋업데이 프로젝트의 정보를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> deleteMeetupProject(@PathVariable("id") Long meetupId) {
+        adminService.deleteMeetup(meetupId);
         return ResponseEntity.ok(new BaseResponse());
     }
 
@@ -114,6 +136,16 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse());
     }
 
+    @DeleteMapping(value = "/admin/review/{id}")
+    @Operation(summary = "학회원 후기 삭제", description = "학회원 후기를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> deleteReview(@PathVariable("id") Long reviewId) {
+        adminService.deleteReview(reviewId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
 
     @GetMapping("/test/review")
     @Operation(summary = "리뷰 리스트 (test db)", description = "리뷰의 모든 리스트를 조회합니다.")

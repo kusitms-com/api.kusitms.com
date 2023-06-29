@@ -196,6 +196,11 @@ public class AdminService {
         meetupRepository.save(meetup);
     }
 
+    @Transactional
+    public void deleteMeetup(Long meetupId) {
+        meetupRepository.deleteById(meetupId);
+    }
+
     @Transactional(readOnly = true)
     public CorporateResponse getCorporateProjects() {
         List<TMPCorporateProject> findProjects = corporateRepository.findAllByOrderByCardinalDesc();
@@ -254,6 +259,11 @@ public class AdminService {
     }
 
     @Transactional
+    public void deleteCorporate(Long corporateId) {
+        corporateRepository.deleteById(corporateId);
+    }
+
+    @Transactional
     public void saveReview(ReviewRequest request) {
         TMPReview review = ReviewRequest.from(request);
         reviewRepository.save(review);
@@ -265,5 +275,10 @@ public class AdminService {
       review.update(request.getName(),
               request.getTeam(),
               request.getReview());
+    }
+
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        reviewRepository.deleteById(reviewId);
     }
 }
