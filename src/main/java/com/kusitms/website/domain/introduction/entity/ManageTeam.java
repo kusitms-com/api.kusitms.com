@@ -29,6 +29,7 @@ public class ManageTeam {
     @Builder
     public ManageTeam(Introduction introduction, String name,
                       String imageUrl, String description) {
+        this.introduction = introduction;
         introduction.getManageTeam().add(this);
         this.name = name;
         this.imageUrl = imageUrl;

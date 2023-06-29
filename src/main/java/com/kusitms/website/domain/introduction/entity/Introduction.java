@@ -67,4 +67,18 @@ public class Introduction {
         this.partnerImageUrl = partnerImageUrl;
         this.introYoutubeLink = introYoutubeLink;
     }
+
+    public void update(Long bannerCardinal, BannerStatus bannerStatus,
+                        Long memberCount, Long projectCount, Long universityCount,
+                        String partnerImageUrl, String introYoutubeLink)
+    {
+        this.bannerCardinal = bannerCardinal;
+        this.bannerStatus = bannerStatus;
+        this.memberCount = memberCount;
+        this.projectCount = projectCount;
+        this.universityCount = universityCount;
+        this.partnerImageUrl = partnerImageUrl;
+        this.introYoutubeLink = introYoutubeLink;
+    }
+
 }

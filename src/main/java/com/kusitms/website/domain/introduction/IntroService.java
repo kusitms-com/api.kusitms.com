@@ -85,6 +85,38 @@ public class IntroService {
 
     @Transactional()
     public void updateIntroduction(IntroRequest request) {
+        String partnerImageUrl = s3Service.uploadFile(request.getPartnerLogoFile(), dirName);
+        Introduction introduction = introRepository.findAll().get(0);
+        introduction.update(request.getBannerCardinal(),
+                request.getBannerStatus(),
+                request.getMemberCount(),
+                request.getProjectCount(),
+                request.getUniversityCount(),
+                partnerImageUrl,
+                request.getIntroYoutubeLink());
+
+        introRepository.save(introduction);
+
+        manageTeamRepository.deleteAll();
+        expertLectureRepository.deleteAll();
+        obLectureRepository.deleteAll();
+
+        List<ManageTeam> manageTeam = request.getTeams().stream()
+                .map(team -> ManagementTeamRequest.from(team, s3Service.uploadFile(team.getImageFile(), dirName), introduction))
+                .collect(Collectors.toList());
+
+        List<ExpertLecture> expertLecture = request.getExpertLecture().stream()
+                .map(lecture -> ExpertLectureRequest.from(lecture, s3Service.uploadFile(lecture.getImageFile(), dirName), introduction))
+                .collect(Collectors.toList());
+
+        List<OBLecture> obLecture = request.getObLecture().stream()
+                .map(lecture -> OBLectureRequest.from(lecture, s3Service.uploadFile(lecture.getImageFile(), dirName), introduction))
+                .collect(Collectors.toList());
+
+        manageTeamRepository.saveAll(manageTeam);
+        expertLectureRepository.saveAll(expertLecture);
+        obLectureRepository.saveAll(obLecture);
+
         return;
     }
 
