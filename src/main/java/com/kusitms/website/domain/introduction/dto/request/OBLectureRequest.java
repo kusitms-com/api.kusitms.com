@@ -5,9 +5,11 @@ import com.kusitms.website.domain.introduction.entity.Introduction;
 import com.kusitms.website.domain.introduction.entity.OBLecture;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
 @Getter
+@Setter
 @Schema
 public class OBLectureRequest {
     @JsonProperty("name")

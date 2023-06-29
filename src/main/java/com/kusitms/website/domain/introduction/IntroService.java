@@ -60,12 +60,11 @@ public class IntroService {
 
     @Transactional()
     public void save(IntroRequest request) {
-
         String partnerImageUrl = s3Service.uploadFile(request.getPartnerLogoFile(), dirName);
         Introduction introduction = IntroRequest.from(request, partnerImageUrl);
         introRepository.save(introduction);
 
-        List<ManageTeam> manageTeam = request.getManagementTeam().stream()
+        List<ManageTeam> manageTeam = request.getTeams().stream()
                 .map(team -> ManagementTeamRequest.from(team, s3Service.uploadFile(team.getImageFile(), dirName), introduction))
                 .collect(Collectors.toList());
 

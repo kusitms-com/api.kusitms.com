@@ -13,6 +13,7 @@ public class ManagementTeamResponse {
     @Schema(description = "운영진 팀 이름", example = "학부학")
     private String name;
 
+    @JsonProperty("image_link")
     @Schema(description = "운영진 이미지 링크", example = "https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/management/학부학.jpg")
     private String imageLink;
 

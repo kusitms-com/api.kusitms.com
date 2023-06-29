@@ -10,9 +10,11 @@ import lombok.Getter;
 @Builder
 @Schema
 public class ExpertLectureResponse {
+
     @Schema(description = "강연자 이름", example = "김전문")
     private String name;
 
+    @JsonProperty("image_link")
     @Schema(description = "강연자 프로필 사진", example = "https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/lecture/김전문_프로필.jpg")
     private String imageLink;
 
