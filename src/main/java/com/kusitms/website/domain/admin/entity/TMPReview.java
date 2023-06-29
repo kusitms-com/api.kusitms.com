@@ -2,6 +2,7 @@ package com.kusitms.website.domain.admin.entity;
 
 import com.kusitms.website.domain.project.entity.Team;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -24,4 +25,17 @@ public class TMPReview {
 
     @Column(nullable = false, length = 300)
     private String review;
+
+    @Builder
+    public TMPReview(String name, Team team, String review) {
+        this.name = name;
+        this.team = team;
+        this.review = review;
+    }
+
+    public void update(String name, Team team, String review) {
+        this.name = name;
+        this.team = team;
+        this.review = review;
+    }
 }

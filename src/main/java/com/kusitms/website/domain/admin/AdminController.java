@@ -4,6 +4,7 @@ import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
+import com.kusitms.website.domain.review.dto.request.ReviewRequest;
 import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
 import com.kusitms.website.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -50,7 +51,7 @@ public class AdminController {
     @PostMapping(value = "/admin/projects/corporate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "기업 프로젝트 정보 등록", description = "기업 프로젝트의 정보를 등록합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
     })
     public ResponseEntity<BaseResponse> addCorporateProject(@ModelAttribute CorporateRequest request) {
@@ -72,7 +73,7 @@ public class AdminController {
     @PostMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "밋업데이 프로젝트 정보 등록", description = "밋업데이 프로젝트의 정보를 등록합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "200", description = "성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
     })
     public ResponseEntity<BaseResponse> addMeetupProject(@ModelAttribute MeetupRequest request) {
@@ -88,6 +89,28 @@ public class AdminController {
     })
     public ResponseEntity<BaseResponse> updateMeetupProject(@ModelAttribute MeetupRequest request) {
         adminService.updateMeetup(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PostMapping(value = "/admin/review")
+    @Operation(summary = "학회원 후기 등록", description = "학회원 후기를 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> addReview(@RequestBody ReviewRequest request) {
+        adminService.saveReview(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PutMapping(value = "/admin/review")
+    @Operation(summary = "학회원 후기 수정", description = "학회원 후기를 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> updateReview(@RequestBody ReviewRequest request) {
+        adminService.updateReview(request);
         return ResponseEntity.ok(new BaseResponse());
     }
 

@@ -16,8 +16,10 @@ import com.kusitms.website.domain.project.dto.response.CorporateResponse;
 import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
 import com.kusitms.website.domain.project.dto.response.MeetupResponse;
 import com.kusitms.website.domain.project.entity.Team;
+import com.kusitms.website.domain.review.dto.request.ReviewRequest;
 import com.kusitms.website.domain.review.dto.response.ReviewDetailResponse;
 import com.kusitms.website.domain.review.dto.response.ReviewResponse;
+import com.kusitms.website.domain.review.entity.Review;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -249,5 +251,19 @@ public class AdminService {
                 logoUrl,
                 bannerUrl,
                 category);
+    }
+
+    @Transactional
+    public void saveReview(ReviewRequest request) {
+        TMPReview review = ReviewRequest.from(request);
+        reviewRepository.save(review);
+    }
+
+    @Transactional
+    public void updateReview(ReviewRequest request) {
+      TMPReview review = reviewRepository.findById(request.getReviewId()).orElseThrow();
+      review.update(request.getName(),
+              request.getTeam(),
+              request.getReview());
     }
 }
