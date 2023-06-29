@@ -1,11 +1,14 @@
 package com.kusitms.website.domain.admin.entity;
 
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
 @Entity
 @Getter
+@NoArgsConstructor
 public class TMPCorporateProject {
     @Id
     @Column(name = "corporate_id", nullable = false)
@@ -26,4 +29,25 @@ public class TMPCorporateProject {
     private String bannerUrl;
 
     private String category;
+
+    @Builder
+    public TMPCorporateProject(int cardinal, String name, String content,
+                               String logoUrl, String bannerUrl, String category) {
+        this.cardinal = cardinal;
+        this.name = name;
+        this.content = content;
+        this.logoUrl = logoUrl;
+        this.bannerUrl = bannerUrl;
+        this.category = category;
+    }
+
+    public void update(int cardinal, String name, String content,
+                               String logoUrl, String bannerUrl, String category) {
+        this.cardinal = cardinal;
+        this.name = name;
+        this.content = content;
+        this.logoUrl = logoUrl;
+        this.bannerUrl = bannerUrl;
+        this.category = category;
+    }
 }

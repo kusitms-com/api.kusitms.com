@@ -9,6 +9,7 @@ import com.kusitms.website.domain.admin.repository.TMPMeetupRepository;
 import com.kusitms.website.domain.admin.repository.TMPMeetupTeamRepository;
 import com.kusitms.website.domain.admin.repository.TMPReviewRepository;
 import com.kusitms.website.domain.file.S3Service;
+import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.domain.project.dto.response.CorporateDetailResponse;
 import com.kusitms.website.domain.project.dto.response.CorporateResponse;
@@ -205,5 +206,48 @@ public class AdminService {
                 .corporateCount(findProjects.size())
                 .corporateList(detailResponses)
                 .build();
+    }
+
+    @Transactional
+    public void saveCorporate(CorporateRequest request) {
+        String logoUrl = s3Service.uploadFile(request.getLogoFile(), "corporate");
+        String bannerUrl = s3Service.uploadFile(request.getBannerFile(), "corporate");
+
+        String category = "";
+        for(int i = 0; i < request.getTag().size(); i++) {
+            if(i == request.getTag().size() - 1) {
+                category += request.getTag().get(i);
+            } else {
+                category +=  request.getTag().get(i) + "#";
+            }
+        }
+
+        TMPCorporateProject corporate = CorporateRequest.from(request, category, logoUrl, bannerUrl);
+
+        corporateRepository.save(corporate);
+    }
+
+    @Transactional
+    public void updateCorporate(CorporateRequest request) {
+        TMPCorporateProject corporate = corporateRepository.findById(request.getCorporateId()).orElseThrow();
+
+        String logoUrl = s3Service.uploadFile(request.getLogoFile(), "corporate");
+        String bannerUrl = s3Service.uploadFile(request.getBannerFile(), "corporate");
+
+        String category = "";
+        for(int i = 0; i < request.getTag().size(); i++) {
+            if(i == request.getTag().size() - 1) {
+                category += request.getTag().get(i);
+            } else {
+                category +=  request.getTag().get(i) + "#";
+            }
+        }
+
+        corporate.update(request.getCardinal(),
+                request.getName(),
+                request.getContent(),
+                logoUrl,
+                bannerUrl,
+                category);
     }
 }

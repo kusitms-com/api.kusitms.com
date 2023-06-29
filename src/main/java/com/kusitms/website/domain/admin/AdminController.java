@@ -2,6 +2,7 @@ package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
+import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
 import com.kusitms.website.global.common.BaseResponse;
@@ -46,17 +47,50 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse());
     }
 
+    @PostMapping(value = "/admin/projects/corporate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "기업 프로젝트 정보 등록", description = "기업 프로젝트의 정보를 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> addCorporateProject(@ModelAttribute CorporateRequest request) {
+        adminService.saveCorporate(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PutMapping(value = "/admin/projects/corporate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "기업 프로젝트 정보 수정", description = "기업 프로젝트의 정보를 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> updateCorporateProject(@ModelAttribute CorporateRequest request) {
+        adminService.updateCorporate(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
     @PostMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "밋업데이 프로젝트 정보 등록", description = "밋업데이 프로젝트의 정보를 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
     public ResponseEntity<BaseResponse> addMeetupProject(@ModelAttribute MeetupRequest request) {
         adminService.saveMeetup(request);
         return ResponseEntity.ok(new BaseResponse());
     }
 
     @PutMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "밋업데이 프로젝트 정보 수정", description = "밋업데이 프로젝트의 정보를 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
     public ResponseEntity<BaseResponse> updateMeetupProject(@ModelAttribute MeetupRequest request) {
         adminService.updateMeetup(request);
         return ResponseEntity.ok(new BaseResponse());
     }
+
 
     @GetMapping("/test/review")
     @Operation(summary = "리뷰 리스트 (test db)", description = "리뷰의 모든 리스트를 조회합니다.")
