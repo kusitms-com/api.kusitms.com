@@ -1,6 +1,8 @@
 package com.kusitms.website.domain.introduction.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kusitms.website.domain.introduction.entity.Introduction;
+import com.kusitms.website.domain.introduction.entity.OBLecture;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,4 +21,14 @@ public class OBLectureRequest {
     @JsonProperty("topic")
     @Schema(description = "강연 주제", example = "큐시즘 바로 알기")
     private String topic;
+
+    public static OBLecture from(OBLectureRequest request, String imageUrl,
+                                 Introduction introduction) {
+        return OBLecture.builder()
+                .name(request.getName())
+                .topic(request.getTopic())
+                .imageUrl(imageUrl)
+                .introduction(introduction)
+                .build();
+    }
 }

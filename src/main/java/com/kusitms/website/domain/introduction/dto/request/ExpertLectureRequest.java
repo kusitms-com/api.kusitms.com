@@ -1,6 +1,8 @@
 package com.kusitms.website.domain.introduction.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kusitms.website.domain.introduction.entity.ExpertLecture;
+import com.kusitms.website.domain.introduction.entity.Introduction;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,4 +25,15 @@ public class ExpertLectureRequest {
     @JsonProperty("description")
     @Schema(description = "강연 내용", example = "큐시즘 바로 알기")
     private String description;
+
+    public static ExpertLecture from(ExpertLectureRequest request, String imageUrl,
+                                     Introduction introduction) {
+        return ExpertLecture.builder()
+                .name(request.getName())
+                .corporation(request.getCorporation())
+                .description(request.getDescription())
+                .introduction(introduction)
+                .imageUrl(imageUrl)
+                .build();
+    }
 }

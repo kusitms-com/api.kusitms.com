@@ -1,4 +1,4 @@
-package com.kusitms.website.domain.introduction;
+package com.kusitms.website.domain.introduction.repository;
 
 import com.kusitms.website.domain.introduction.entity.Introduction;
 import org.springframework.data.jpa.repository.JpaRepository;

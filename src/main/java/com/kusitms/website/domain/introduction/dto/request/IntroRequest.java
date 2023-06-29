@@ -1,6 +1,9 @@
 package com.kusitms.website.domain.introduction.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kusitms.website.domain.introduction.entity.BannerStatus;
+import com.kusitms.website.domain.introduction.entity.Introduction;
+import com.kusitms.website.domain.introduction.entity.ManageTeam;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,8 +18,8 @@ public class IntroRequest {
     private Long bannerCardinal;
 
     @JsonProperty("banner_status")
-    @Schema(description = "배너 상태 (대문자 영문 코드 활용)", example = "CLOSE/MANAGEMENT_RECRUIT/MEMBER_RECRUIT")
-    private String bannerStatus;
+    @Schema(description = "배너 상태 (대문자 영문 코드)", example = "CLOSE/MANAGEMENT_RECRUIT/MEMBER_RECRUIT")
+    private BannerStatus bannerStatus;
 
     @JsonProperty("member_count")
     @Schema(description = "누적 학회원 수 ", example = "1432")
@@ -49,4 +52,16 @@ public class IntroRequest {
     @JsonProperty("partner_logo_file")
     @Schema(description = "파트너사 소개 이미지 파일")
     private MultipartFile partnerLogoFile;
+
+    public static Introduction from(IntroRequest request, String partnerImageUrl) {
+        return Introduction.builder()
+                .bannerCardinal(request.getBannerCardinal())
+                .bannerStatus(request.getBannerStatus())
+                .memberCount(request.getMemberCount())
+                .projectCount(request.getProjectCount())
+                .universityCount(request.getUniversityCount())
+                .introYoutubeLink(request.getIntroYoutubeLink())
+                .partnerImageUrl(partnerImageUrl)
+                .build();
+    }
 }
