@@ -21,7 +21,7 @@ public class S3Service {
     private String bucket;
     private final AmazonS3Client amazonS3Client;
 
-    public String uploadFile(MultipartFile multipartFile, String dirName) throws IOException {
+    public String uploadFile(MultipartFile multipartFile, String dirName) {
         String fileName = randomFileName(multipartFile, dirName);
 
         String ext = fileName.split("\\.")[1];
@@ -51,6 +51,8 @@ public class S3Service {
         } catch (AmazonServiceException e) {
             e.printStackTrace();
         } catch (SdkClientException e) {
+            e.printStackTrace();
+        } catch(IOException e) {
             e.printStackTrace();
         }
 

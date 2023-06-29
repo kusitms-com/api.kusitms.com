@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.project.dto.response;
 
+import com.kusitms.website.domain.admin.entity.TMPMeetupTeam;
 import com.kusitms.website.domain.project.entity.MeetupTeam;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -31,8 +32,69 @@ public class MeetupTeamResponse {
         getMember(team);
     }
 
+    public MeetupTeamResponse(String name, List<TMPMeetupTeam> team) {
+        this.name = name;
+        getTMPMember(team);
+    }
+
     private void getMember(List<MeetupTeam> team) {
         for(MeetupTeam t : team) {
+            switch(t.getTeam()) {
+                case PLANNER:
+                    if(planner == null) {
+                        planner = new ArrayList<>();
+                    }
+                    planner.add(t.getName());
+                    break;
+                case DESIGNER:
+                    if(designer == null) {
+                        designer = new ArrayList<>();
+                    }
+                    designer.add(t.getName());
+                    break;
+                case FRONTEND:
+                    if(frontend == null) {
+                        frontend = new ArrayList<>();
+                    }
+                    frontend.add(t.getName());
+                    break;
+                case BACKEND:
+                    if(backend == null) {
+                        backend = new ArrayList<>();
+                    }
+                    backend.add(t.getName());
+                    break;
+                case IOS:
+                    if(ios == null) {
+                        ios = new ArrayList<>();
+                    }
+                    ios.add(t.getName());
+                    break;
+                case ANDROID:
+                    if(aos == null) {
+                        aos = new ArrayList<>();
+                    }
+                    aos.add(t.getName());
+                    break;
+            }
+        }
+
+        Collections.sort(planner);
+        Collections.sort(designer);
+        Collections.sort(backend);
+        if(frontend != null) {
+            Collections.sort(frontend);
+        }
+        if(ios != null) {
+            Collections.sort(ios);
+        }
+        if(aos != null) {
+            Collections.sort(aos);
+        }
+    }
+
+    private void getTMPMember(List<TMPMeetupTeam> team) {
+        for(TMPMeetupTeam t : team) {
             switch(t.getTeam()) {
                 case PLANNER:
                     if(planner == null) {
