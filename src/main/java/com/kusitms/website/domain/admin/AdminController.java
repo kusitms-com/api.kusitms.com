@@ -2,13 +2,7 @@ package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
-import com.kusitms.website.domain.project.dto.response.CorporateDetailResponse;
-import com.kusitms.website.domain.project.dto.response.CorporateResponse;
-import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
-import com.kusitms.website.domain.project.dto.response.MeetupResponse;
-import com.kusitms.website.domain.review.ReviewService;
-import com.kusitms.website.domain.review.dto.response.ReviewDetailResponse;
-import com.kusitms.website.domain.review.dto.response.ReviewResponse;
+import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
 import com.kusitms.website.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -49,6 +43,18 @@ public class AdminController {
     public ResponseEntity<BaseResponse> updateIntroduction(@ModelAttribute IntroRequest request, HttpServletRequest httpRequest) {
         String token = jwtTokenProvider.getJwtFromRequest(httpRequest);
         introService.updateIntroduction(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PostMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaseResponse> addMeetupProject(@ModelAttribute MeetupRequest request) {
+        adminService.saveMeetup(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PutMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<BaseResponse> updateMeetupProject(@ModelAttribute MeetupRequest request) {
+        adminService.updateMeetup(request);
         return ResponseEntity.ok(new BaseResponse());
     }
 
