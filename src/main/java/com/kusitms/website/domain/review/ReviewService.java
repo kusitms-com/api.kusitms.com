@@ -17,7 +17,7 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public ReviewResponse getReviews() {
-        List<Review> findReviews = reviewRepository.findAll();
+        List<Review> findReviews = reviewRepository.findAllByOrderByReviewIdDesc();
 
         List<ReviewDetailResponse> reviewDetailResponses = findReviews.stream()
                 .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getTeam(), r.getReview()))
