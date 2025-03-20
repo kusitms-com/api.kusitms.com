@@ -22,8 +22,13 @@ public class MeetupService {
     private final MeetupTeamRepository meetupTeamRepository;
 
 
-    public MeetupResponse getMeetupProjects() {
-        List<MeetupProject> findProjects = meetupRepository.findAllByOrderByCardinalDesc();
+    public MeetupResponse getMeetupProjects(String order) {
+        List<MeetupProject> findProjects;
+        if ("asc".equals(order)) {
+            findProjects = meetupRepository.findAllByOrderByCardinalAsc();  // 오래된 순
+        } else {
+            findProjects = meetupRepository.findAllByOrderByCardinalDesc();  // 최신순
+        }
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()
                 .map(p -> new MeetupDetailResponse(p, false))
