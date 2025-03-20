@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CorporateService {
     private final CorporateRepository corporateRepository;
 
-    @Transactional(readOnly = true)
     public CorporateResponse getCorporateProjects() {
         List<CorporateProject> findProjects = corporateRepository.findAllByOrderByCardinalDesc();
 
