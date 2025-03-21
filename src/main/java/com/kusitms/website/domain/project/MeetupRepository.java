@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MeetupRepository extends JpaRepository<MeetupProject, Long> {
-    List<MeetupProject> findAllByOrderByCardinalDesc();
+    List<MeetupProject> findAllByOrderByCardinalDesc(); // 최신순
+    List<MeetupProject> findAllByOrderByCardinalAsc();  // 오래된 순
 }

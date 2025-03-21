@@ -13,12 +13,17 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CorporateService {
     private final CorporateRepository corporateRepository;
 
-    @Transactional(readOnly = true)
-    public CorporateResponse getCorporateProjects() {
-        List<CorporateProject> findProjects = corporateRepository.findAllByOrderByCardinalDesc();
+    public CorporateResponse getCorporateProjects(String order) {
+        List<CorporateProject> findProjects;
+        if ("asc".equals(order)) {
+            findProjects = corporateRepository.findAllByOrderByCardinalAsc();  // 오래된 순
+        } else {
+            findProjects = corporateRepository.findAllByOrderByCardinalDesc();  // 최신순
+        }
 
         List<CorporateDetailResponse> detailResponses = findProjects.stream()
                 .map(p -> new CorporateDetailResponse(p))
