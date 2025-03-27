@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.project.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
 import com.kusitms.website.domain.project.entity.MeetupProject;
@@ -16,14 +17,21 @@ public class MeetupDetailResponse {
     @JsonProperty("meetup_id")
     @Schema(description = "밋업 ID")
     private Long meetupId;
+
     @Schema(description = "프로젝트 진행 기수")
     private int cardinal;
+
     @Schema(description = "프로젝트 이름")
     private String name;
+
     @Schema(description = "프로젝트 소개")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String intro;
+
     @Schema(description = "프로젝트 구현 유형")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String type;
+
     @JsonProperty("one_line_intro")
     @Schema(description = "프로젝트 한 줄 소개")
     private String oneLineIntro;
@@ -31,27 +39,35 @@ public class MeetupDetailResponse {
     @JsonProperty("logo_url")
     @Schema(description = "로고 이미지 URL")
     private String logoUrl;
+
     @JsonProperty("poster_url")
     @Schema(description = "아이템 포스터 이미지 URL")
     private String posterUrl;
+
     @JsonProperty("instagram_url")
     @Schema(description = "인스타그램 URL")
     private String instagramUrl;
+
     @JsonProperty("github_url")
     @Schema(description = "깃허브 URL")
     private String githubUrl;
+
     @JsonProperty("app_url")
     @Schema(description = "프로젝트 결과물 URL")
     private String appUrl;
 
     @JsonProperty("start_date")
     @Schema(description = "프로젝트 시작 날짜")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private LocalDate startDate;
+
     @JsonProperty("end_date")
     @Schema(description = "프로젝트 종료 날짜")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private LocalDate endDate;
 
     @Schema(description = "프로젝트 참여 팀원")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private MeetupTeamResponse team;
 
     public MeetupDetailResponse(MeetupProject meetup, boolean isDetail) {
