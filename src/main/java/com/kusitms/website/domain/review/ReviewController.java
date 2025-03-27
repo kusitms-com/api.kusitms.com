@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.review;
 
+import com.kusitms.website.domain.project.entity.Team;
 import com.kusitms.website.global.common.BaseResponse;
 import com.kusitms.website.domain.review.dto.response.ReviewDetailResponse;
 import com.kusitms.website.domain.review.dto.response.ReviewResponse;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -30,7 +32,13 @@ public class ReviewController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(schema = @Schema(implementation = ReviewDetailResponse.class))),
     })
-    public ResponseEntity<BaseResponse> getReviews() {
-        return ResponseEntity.ok(new BaseResponse(reviewService.getReviews()));
+    public ResponseEntity<BaseResponse> getReviews(@RequestParam(required = false) Team team) {
+        ReviewResponse reviewResponse;
+        if (team == null) {
+            reviewResponse = reviewService.getAllReviews();
+        } else {
+            reviewResponse = reviewService.getReviewsByTeam(team);
+        }
+        return ResponseEntity.ok(new BaseResponse(reviewResponse));
     }
 }
