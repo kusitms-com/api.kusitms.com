@@ -59,7 +59,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(schema = @Schema(implementation = CorporateDetailResponse.class)))
     })
-    public ResponseEntity<BaseResponse> getCorporateProjects(@RequestParam(defaultValue = "desc") String order) {
-        return ResponseEntity.ok(new BaseResponse(corporateService.getCorporateProjects(order)));
+    public ResponseEntity<BaseResponse> getCorporateProjects(
+            @RequestParam(required = false) Integer cardinal,
+            @RequestParam(defaultValue = "desc") String order) {
+        return ResponseEntity.ok(new BaseResponse(corporateService.getCorporateProjects(order, cardinal)));
     }
 }
