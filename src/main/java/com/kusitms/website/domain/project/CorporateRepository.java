@@ -8,4 +8,5 @@ import java.util.List;
 public interface CorporateRepository extends JpaRepository<CorporateProject, Long> {
     List<CorporateProject> findAllByOrderByCardinalDesc();
     List<CorporateProject> findAllByOrderByCardinalAsc();
+    List<CorporateProject> findAllByCardinal(Integer cardinal);
 }

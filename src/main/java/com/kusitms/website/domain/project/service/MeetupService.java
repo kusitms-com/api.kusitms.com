@@ -21,13 +21,18 @@ public class MeetupService {
     private final MeetupRepository meetupRepository;
     private final MeetupTeamRepository meetupTeamRepository;
 
-
-    public MeetupResponse getMeetupProjects(String order) {
+    public MeetupResponse getMeetupProjects(String order, Integer cardinal) {
         List<MeetupProject> findProjects;
-        if ("asc".equals(order)) {
-            findProjects = meetupRepository.findAllByOrderByCardinalAsc();  // 오래된 순
+        if (cardinal != null) {
+            // If a cardinal is provided, filter projects by the given cardinal value.
+            findProjects = meetupRepository.findAllByCardinal(cardinal);
         } else {
-            findProjects = meetupRepository.findAllByOrderByCardinalDesc();  // 최신순
+            // Otherwise, sort all projects by cardinal in the specified order.
+            if ("asc".equalsIgnoreCase(order)) {
+                findProjects = meetupRepository.findAllByOrderByCardinalAsc();  // Oldest first
+            } else {
+                findProjects = meetupRepository.findAllByOrderByCardinalDesc(); // Newest first
+            }
         }
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()

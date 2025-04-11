@@ -17,12 +17,18 @@ import java.util.stream.Collectors;
 public class CorporateService {
     private final CorporateRepository corporateRepository;
 
-    public CorporateResponse getCorporateProjects(String order) {
+    public CorporateResponse getCorporateProjects(String order, Integer cardinal) {
         List<CorporateProject> findProjects;
-        if ("asc".equals(order)) {
-            findProjects = corporateRepository.findAllByOrderByCardinalAsc();  // 오래된 순
+        if (cardinal != null) {
+            // If a cardinal is provided, filter projects by the given cardinal.
+            findProjects = corporateRepository.findAllByCardinal(cardinal);
         } else {
-            findProjects = corporateRepository.findAllByOrderByCardinalDesc();  // 최신순
+            // Otherwise, sort all projects by cardinal in the specified order.
+            if ("asc".equalsIgnoreCase(order)) {
+                findProjects = corporateRepository.findAllByOrderByCardinalAsc();  // Oldest first
+            } else {
+                findProjects = corporateRepository.findAllByOrderByCardinalDesc(); // Newest first
+            }
         }
 
         List<CorporateDetailResponse> detailResponses = findProjects.stream()
