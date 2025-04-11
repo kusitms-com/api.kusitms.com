@@ -8,4 +8,5 @@ import java.util.List;
 public interface MeetupRepository extends JpaRepository<MeetupProject, Long> {
     List<MeetupProject> findAllByOrderByCardinalDesc(); // 최신순
     List<MeetupProject> findAllByOrderByCardinalAsc();  // 오래된 순
+    List<MeetupProject> findAllByCardinal(Integer cardinal);
 }

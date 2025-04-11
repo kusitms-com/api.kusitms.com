@@ -33,8 +33,10 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(schema = @Schema(implementation = MeetupDetailResponse.class)))
     })
-    public ResponseEntity<BaseResponse> getMeetupProjects(@RequestParam(defaultValue = "desc") String order) {
-        return ResponseEntity.ok(new BaseResponse(meetupService.getMeetupProjects(order)));
+    public ResponseEntity<BaseResponse> getMeetupProjects(
+            @RequestParam(required = false) Integer cardinal,
+            @RequestParam(defaultValue = "desc") String order) {
+        return ResponseEntity.ok(new BaseResponse(meetupService.getMeetupProjects(order, cardinal)));
     }
 
     @GetMapping("/meetup/{meetup_id}")
