@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -59,6 +61,14 @@ public class MeetupProject {
 
     @OneToMany(mappedBy = "meetupProject", cascade = CascadeType.ALL)
     private List<MeetupTeam> team = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "meetup_project_tags",
+            joinColumns = @JoinColumn(name = "meetup_project_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
 
     @Builder
     public MeetupProject(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
