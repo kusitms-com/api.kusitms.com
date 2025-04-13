@@ -5,6 +5,7 @@ import com.kusitms.website.domain.admin.entity.TMPCorporateProject;
 import com.kusitms.website.domain.project.entity.CorporateProject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +33,10 @@ public class CorporateDetailResponse {
     @Schema(description = "배너 이미지 URL")
     private String bannerUrl;
 
+    @Setter
+    @JsonProperty("tags")
+    private List<String> tags;
+
     public CorporateDetailResponse(CorporateProject corporate) {
         this.corporateId = corporate.getCorporateId();
         this.cardinal = corporate.getCardinal();
@@ -56,4 +61,5 @@ public class CorporateDetailResponse {
     private List<String> splitCategory(String categoryString) {
         return Arrays.asList(categoryString.split("#"));
     }
+
 }

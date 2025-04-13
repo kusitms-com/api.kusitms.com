@@ -1,11 +1,11 @@
 package com.kusitms.website.domain.project.service;
 
-import com.kusitms.website.domain.project.entity.MeetupProject;
-import com.kusitms.website.domain.project.dto.response.MeetupResponse;
-import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
+import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.project.MeetupRepository;
 import com.kusitms.website.domain.project.MeetupTeamRepository;
-import com.kusitms.website.domain.file.S3Service;
+import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
+import com.kusitms.website.domain.project.dto.response.MeetupResponse;
+import com.kusitms.website.domain.project.entity.MeetupProject;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +36,14 @@ public class MeetupService {
         }
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()
-                .map(p -> new MeetupDetailResponse(p, false))
+                .map(p -> {
+                    List<String> tags = p.getTags().stream()
+                            .map(tag -> "#" + tag.getName()) // Extract tag names
+                            .collect(Collectors.toList());
+                    MeetupDetailResponse response = new MeetupDetailResponse(p, false);
+                    response.setTags(tags); // Set tags in response
+                    return response;
+                })
                 .collect(Collectors.toList());
 
         return MeetupResponse.builder()

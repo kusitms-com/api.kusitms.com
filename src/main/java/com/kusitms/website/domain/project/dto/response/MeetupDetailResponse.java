@@ -6,8 +6,10 @@ import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
 import com.kusitms.website.domain.project.entity.MeetupProject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static com.kusitms.website.global.util.S3Util.s3Url;
 
@@ -70,6 +72,11 @@ public class MeetupDetailResponse {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private MeetupTeamResponse team;
 
+    @Setter
+    @Schema(description = "프로젝트 관련 태그")
+    @JsonProperty("tags")
+    private List<String> tags;
+
     public MeetupDetailResponse(MeetupProject meetup, boolean isDetail) {
         this.meetupId = meetup.getMeetupId();
         this.cardinal = meetup.getCardinal();
@@ -109,4 +116,5 @@ public class MeetupDetailResponse {
             this.team = new MeetupTeamResponse(meetup.getTeamName(), meetup.getTeam());
         }
     }
+
 }
