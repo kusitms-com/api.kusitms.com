@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -39,6 +41,9 @@ public class MeetupProject {
     @Column(name = "poster_url", nullable = false)
     private String posterUrl;
 
+    @Column(name = "web_thumbnail_url")
+    private String webThumbnailUrl;
+
     @Column(name = "instagram_url")
     private String instagramUrl;
 
@@ -60,9 +65,17 @@ public class MeetupProject {
     @OneToMany(mappedBy = "meetupProject", cascade = CascadeType.ALL)
     private List<MeetupTeam> team = new ArrayList<>();
 
+    @ManyToMany
+    @JoinTable(
+            name = "meetup_project_tags",
+            joinColumns = @JoinColumn(name = "meetup_project_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
+
     @Builder
     public MeetupProject(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
-                         String logoUrl, String posterUrl, String instagramUrl, String githubUrl, String appUrl,
+                         String logoUrl, String posterUrl, String webThumbnailUrl, String instagramUrl, String githubUrl, String appUrl,
                          LocalDate startDate, LocalDate endDate, String teamName) {
         this.cardinal = cardinal;
         this.name = name;
@@ -71,6 +84,7 @@ public class MeetupProject {
         this.oneLineIntro = oneLineIntro;
         this.logoUrl = logoUrl;
         this.posterUrl = posterUrl;
+        this.webThumbnailUrl = webThumbnailUrl;
         this.instagramUrl = instagramUrl;
         this.githubUrl = githubUrl;
         this.appUrl = appUrl;

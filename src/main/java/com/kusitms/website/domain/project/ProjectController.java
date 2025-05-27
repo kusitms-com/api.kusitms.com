@@ -34,9 +34,10 @@ public class ProjectController {
                     content = @Content(schema = @Schema(implementation = MeetupDetailResponse.class)))
     })
     public ResponseEntity<BaseResponse> getMeetupProjects(
+            @RequestParam(required = false) String batch,
             @RequestParam(required = false) Integer cardinal,
             @RequestParam(defaultValue = "desc") String order) {
-        return ResponseEntity.ok(new BaseResponse(meetupService.getMeetupProjects(order, cardinal)));
+        return ResponseEntity.ok(new BaseResponse(meetupService.getMeetupProjects(order, cardinal, batch)));
     }
 
     @GetMapping("/meetup/{meetup_id}")
