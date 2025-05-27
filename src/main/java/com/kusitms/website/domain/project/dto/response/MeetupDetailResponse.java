@@ -86,7 +86,7 @@ public class MeetupDetailResponse {
         this.cardinal = meetup.getCardinal();
         this.name = meetup.getName();
         this.posterUrl = s3Url + meetup.getPosterUrl();
-        this.webThumbnailUrl = meetup.getWebThumbnailUrl();
+        this.webThumbnailUrl = s3Url + meetup.getWebThumbnailUrl();
         this.logoUrl = s3Url + meetup.getLogoUrl();
         this.oneLineIntro = meetup.getOneLineIntro();
         this.instagramUrl = meetup.getInstagramUrl();
