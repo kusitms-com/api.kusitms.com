@@ -65,6 +65,9 @@ public class MeetupProject {
     @OneToMany(mappedBy = "meetupProject", cascade = CascadeType.ALL)
     private List<MeetupTeam> team = new ArrayList<>();
 
+    @Column(name = "display_flag")
+    private boolean displayFlag;
+
     @ManyToMany
     @JoinTable(
             name = "meetup_project_tags",
@@ -76,11 +79,12 @@ public class MeetupProject {
     @Builder
     public MeetupProject(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
                          String logoUrl, String posterUrl, String webThumbnailUrl, String instagramUrl, String githubUrl, String appUrl,
-                         LocalDate startDate, LocalDate endDate, String teamName) {
+                         Boolean displayFlag, LocalDate startDate, LocalDate endDate, String teamName) {
         this.cardinal = cardinal;
         this.name = name;
         this.intro = intro;
         this.type = type;
+        this.displayFlag = displayFlag;
         this.oneLineIntro = oneLineIntro;
         this.logoUrl = logoUrl;
         this.posterUrl = posterUrl;
