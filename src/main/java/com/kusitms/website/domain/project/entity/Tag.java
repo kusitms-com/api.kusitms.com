@@ -15,7 +15,8 @@ public class Tag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long tagId;
 
-    private String name; // The actual tag name, e.g., "#지도", "#글쓰기"
+    @Column(nullable = false, unique = true)
+    private String name;
 
     @ManyToMany(mappedBy = "tags")
     private Set<CorporateProject> corporateProjects = new HashSet<>();
