@@ -121,5 +121,4 @@ public class MeetupDetailResponse {
             this.team = new MeetupTeamResponse(meetup.getTeamName(), meetup.getTeam());
         }
     }
-
 }

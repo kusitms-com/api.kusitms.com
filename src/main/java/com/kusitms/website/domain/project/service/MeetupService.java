@@ -1,8 +1,6 @@
 package com.kusitms.website.domain.project.service;
 
-import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.project.MeetupRepository;
-import com.kusitms.website.domain.project.MeetupTeamRepository;
 import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
 import com.kusitms.website.domain.project.dto.response.MeetupResponse;
 import com.kusitms.website.domain.project.entity.MeetupProject;
@@ -17,41 +15,38 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MeetupService {
-    private final S3Service s3Service;
+
     private final MeetupRepository meetupRepository;
-    private final MeetupTeamRepository meetupTeamRepository;
 
     public MeetupResponse getMeetupProjects(String order, Integer cardinal, String batch) {
         List<MeetupProject> findProjects;
         if (cardinal != null) {
-            // If a cardinal is provided, filter projects by the given cardinal value.
             findProjects = meetupRepository.findAllByCardinal(cardinal);
         } else {
-            // Otherwise, sort all projects by cardinal in the specified order.
             if ("asc".equalsIgnoreCase(order)) {
-                findProjects = meetupRepository.findAllByOrderByCardinalAsc();  // Oldest first
+                findProjects = meetupRepository.findAllByOrderByCardinalAsc();
             } else {
-                findProjects = meetupRepository.findAllByOrderByCardinalDesc(); // Newest first
+                findProjects = meetupRepository.findAllByOrderByCardinalDesc();
             }
         }
 
         if ("OB".equalsIgnoreCase(batch)) {
             findProjects = findProjects.stream()
-                    .filter(p -> p.getMeetupId().equals(55L))
+                    .filter(meetupProject -> meetupProject.getMeetupId().equals(55L))
                     .collect(Collectors.toList());
         } else if ("YB".equalsIgnoreCase(batch)) {
             findProjects = findProjects.stream()
-                    .filter(p -> !p.getMeetupId().equals(55L))
+                    .filter(meetupProject -> !meetupProject.getMeetupId().equals(55L))
                     .collect(Collectors.toList());
         }
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()
-                .map(p -> {
-                    List<String> tags = p.getTags().stream()
-                            .map(tag -> "#" + tag.getName()) // Extract tag names
+                .map(meetupProject -> {
+                    List<String> tags = meetupProject.getTags().stream()
+                            .map(tag -> "#" + tag.getName())
                             .collect(Collectors.toList());
-                    MeetupDetailResponse response = new MeetupDetailResponse(p, false);
-                    response.setTags(tags); // Set tags in response
+                    MeetupDetailResponse response = new MeetupDetailResponse(meetupProject, true);
+                    response.setTags(tags);
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -65,8 +60,6 @@ public class MeetupService {
 
     public MeetupDetailResponse getMeetupProject(Long meetupId) {
         MeetupProject findProject = meetupRepository.findById(meetupId).orElseThrow();
-
         return new MeetupDetailResponse(findProject, true);
     }
-
 }
