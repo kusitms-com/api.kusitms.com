@@ -21,7 +21,7 @@ public class MeetupService {
     private final MeetupRepository meetupRepository;
     private final MeetupTeamRepository meetupTeamRepository;
 
-    public MeetupResponse getMeetupProjects(String order, Integer cardinal) {
+    public MeetupResponse getMeetupProjects(String order, Integer cardinal, String batch) {
         List<MeetupProject> findProjects;
         if (cardinal != null) {
             // If a cardinal is provided, filter projects by the given cardinal value.
@@ -33,6 +33,16 @@ public class MeetupService {
             } else {
                 findProjects = meetupRepository.findAllByOrderByCardinalDesc(); // Newest first
             }
+        }
+
+        if ("OB".equalsIgnoreCase(batch)) {
+            findProjects = findProjects.stream()
+                    .filter(p -> p.getMeetupId().equals(55L))
+                    .collect(Collectors.toList());
+        } else if ("YB".equalsIgnoreCase(batch)) {
+            findProjects = findProjects.stream()
+                    .filter(p -> !p.getMeetupId().equals(55L))
+                    .collect(Collectors.toList());
         }
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()
