@@ -50,6 +50,10 @@ public class MeetupDetailResponse {
     @Schema(description = "웹 썸네일 이미지 URL")
     private String webThumbnailUrl;
 
+    @JsonProperty("behance_url")
+    @Schema(description = "비핸스 URL")
+    private String behanceUrl;
+
     @JsonProperty("instagram_url")
     @Schema(description = "인스타그램 URL")
     private String instagramUrl;
@@ -89,6 +93,7 @@ public class MeetupDetailResponse {
         this.webThumbnailUrl = s3Url + meetup.getWebThumbnailUrl();
         this.logoUrl = s3Url + meetup.getLogoUrl();
         this.oneLineIntro = meetup.getOneLineIntro();
+        this.behanceUrl = meetup.getBehanceUrl();
         this.instagramUrl = meetup.getInstagramUrl();
         this.githubUrl = meetup.getGithubUrl();
         this.appUrl = meetup.getAppUrl();
