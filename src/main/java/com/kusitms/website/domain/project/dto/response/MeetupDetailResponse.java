@@ -87,7 +87,7 @@ public class MeetupDetailResponse {
 
     public MeetupDetailResponse(MeetupProject meetup, boolean isDetail) {
         this.meetupId = meetup.getMeetupId();
-        this.cardinal = meetup.getCardinal();
+        this.cardinal = meetup.getMeetupId() == 55 ? 30 : meetup.getCardinal();
         this.name = meetup.getName();
         this.posterUrl = s3Url + meetup.getPosterUrl();
         this.webThumbnailUrl = s3Url + meetup.getWebThumbnailUrl();
