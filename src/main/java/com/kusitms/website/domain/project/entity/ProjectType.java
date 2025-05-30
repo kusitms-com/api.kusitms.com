@@ -2,7 +2,8 @@ package com.kusitms.website.domain.project.entity;
 
 public enum ProjectType {
     APP("app"),
-    WEB("web");
+    WEB("web"),
+    CHROME_EXTENSION("chrome extension");
 
     private String name;
 
