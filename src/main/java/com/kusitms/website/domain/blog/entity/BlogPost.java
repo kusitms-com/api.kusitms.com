@@ -13,7 +13,7 @@
         @Column(name = "blog_post_id", nullable = false)
         private Long id;
 
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "blog_author_id")
         private BlogAuthor blogAuthor;
 

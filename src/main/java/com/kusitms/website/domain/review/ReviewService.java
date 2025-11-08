@@ -31,7 +31,7 @@ public class ReviewService {
 
     private ReviewResponse buildReviewResponse(List<Review> findReviews) {
         List<ReviewDetailResponse> reviewDetailResponses = findReviews.stream()
-                .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getTeam(), r.getReview()))
+                .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(),r.getCardinal(), r.getTeam(), r.getReview()))
                 .collect(Collectors.toList());
 
         return ReviewResponse.builder()

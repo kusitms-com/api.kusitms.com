@@ -16,6 +16,8 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long reviewId;
 
+    private Integer cardinal;
+
     @Column(nullable = false)
     private String name;
 

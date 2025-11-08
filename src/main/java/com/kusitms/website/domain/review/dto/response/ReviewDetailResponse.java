@@ -15,6 +15,9 @@ public class ReviewDetailResponse {
     @Schema(description = "이름")
     private String name;
 
+    @Schema(description = "기수")
+    private Integer cardinal;
+
     @Schema(description = "소속팀")
     private String team;
 
@@ -24,6 +27,14 @@ public class ReviewDetailResponse {
     public ReviewDetailResponse(Long reviewId, String name, Team team, String review) {
         this.reviewId = reviewId;
         this.name = name;
+        this.team = getTeamString(team);
+        this.review = review;
+    }
+
+    public ReviewDetailResponse(Long reviewId, String name, Integer cardinal, Team team, String review) {
+        this.reviewId = reviewId;
+        this.name = name;
+        this.cardinal = cardinal;
         this.team = getTeamString(team);
         this.review = review;
     }
