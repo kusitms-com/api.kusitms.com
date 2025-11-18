@@ -32,13 +32,22 @@ public class ReviewController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(schema = @Schema(implementation = ReviewDetailResponse.class))),
     })
-    public ResponseEntity<BaseResponse> getReviews(@RequestParam(required = false) Team team) {
+    public ResponseEntity<BaseResponse> getReviews(@RequestParam(required = false) Team team,
+                                                   @RequestParam(required = false) Integer cardinal) {
         ReviewResponse reviewResponse;
-        if (team == null) {
+        if (team == null && cardinal == null) {
             reviewResponse = reviewService.getAllReviews();
-        } else {
+        }
+        else if (team != null && cardinal == null) {
             reviewResponse = reviewService.getReviewsByTeam(team);
         }
+        else if (team == null && cardinal != null) {
+            reviewResponse = reviewService.getReviewsByCardinal(cardinal);
+        }
+        else {
+            reviewResponse = reviewService.getReviewsByTeamAndCardinal(team, cardinal);
+        }
+
         return ResponseEntity.ok(new BaseResponse(reviewResponse));
     }
 }
