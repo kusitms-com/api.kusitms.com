@@ -39,4 +39,15 @@ public class ReviewService {
                 .reviewList(reviewDetailResponses)
                 .build();
     }
+
+    public ReviewResponse getReviewsByCardinal(Integer cardinal) {
+        List<Review> findReviews = reviewRepository.findByCardinalOrderByReviewIdDesc(cardinal);
+        return buildReviewResponse(findReviews);
+    }
+
+    public ReviewResponse getReviewsByTeamAndCardinal(Team team, Integer cardinal) {
+        List<Review> findReviews =
+                reviewRepository.findByTeamAndCardinalOrderByReviewIdDesc(team, cardinal);
+        return buildReviewResponse(findReviews);
+    }
 }
