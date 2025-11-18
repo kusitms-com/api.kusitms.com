@@ -1,11 +1,13 @@
 package com.kusitms.website.domain.blog.repository;
 
+import com.kusitms.website.domain.blog.dto.response.BlogResponse;
 import com.kusitms.website.domain.blog.entity.BlogPost;
 import com.kusitms.website.domain.blog.entity.Category;
 import com.kusitms.website.domain.blog.entity.Position;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 
 public interface BlogPostQueryRepository {
-    List<BlogPost> findByFiltersWithPaging(Integer generation, Position position, Category category, Long lastId, int size);
+    Page<BlogResponse> findByFiltersWithPaging(Integer generation, Position position, Category category, Pageable pageable);
 }
