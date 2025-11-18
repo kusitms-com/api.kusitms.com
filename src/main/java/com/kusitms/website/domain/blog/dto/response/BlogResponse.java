@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.blog.entity.BlogAuthor;
 import com.kusitms.website.domain.blog.entity.BlogPost;
 import com.kusitms.website.domain.blog.entity.Category;
+import com.querydsl.core.annotations.QueryProjection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -12,7 +13,6 @@ import javax.persistence.*;
 @Getter
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class BlogResponse {
     @JsonProperty("blog_post_id")
     @Schema(description = "블로그 글 아이디")
@@ -32,18 +32,26 @@ public class BlogResponse {
     @Schema(description = "파트명")
     private String position;
 
-    public static BlogResponse fromEntity(BlogPost post) {
-        return BlogResponse.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .categoryName(post.getCategory().getDescription())
-                .address(post.getAddress())
-                .imageAddress(post.getImageAddress())
-                .content(post.getContent())
-                .cardinal(post.getBlogAuthor().getGeneration())
-                .position(post.getBlogAuthor().getPosition().getDescription())
-                .build();
+    @QueryProjection
+    public BlogResponse(Long id,
+                        String title,
+                        String address,
+                        String imageAddress,
+                        String content,
+                        String categoryName,
+                        Integer cardinal,
+                        String position) {
+        this.id = id;
+        this.title = title;
+        this.address = address;
+        this.imageAddress = imageAddress;
+        this.content = content;
+        this.categoryName = categoryName;
+        this.cardinal = cardinal;
+        this.position = position;
     }
+
+
 
 
 }

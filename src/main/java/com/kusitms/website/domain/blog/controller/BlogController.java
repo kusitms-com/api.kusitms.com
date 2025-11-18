@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,10 +46,9 @@ public class BlogController {
             @RequestParam(required = false) Integer generation,
             @RequestParam(required = false) Position position,
             @RequestParam(required = false) Category category,
-            @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") int size
+            Pageable pageable
     ) {
-        List<BlogResponse> result = blogService.getFilteredPostsWithPaging(generation, position, category, lastId, size);
+        Page<BlogResponse> result = blogService.getFilteredPostsWithPaging(generation, position, category, pageable);
         return ResponseEntity.ok(new BaseResponse(result));
     }
 }
