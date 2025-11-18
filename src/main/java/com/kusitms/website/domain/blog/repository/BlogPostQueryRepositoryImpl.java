@@ -37,7 +37,7 @@ public class BlogPostQueryRepositoryImpl implements BlogPostQueryRepository {
 
         return queryFactory
                 .selectFrom(blogPost)
-                .join(blogPost.blogAuthor, blogAuthor)
+                .join(blogPost.blogAuthor, blogAuthor).fetchJoin()
                 .where(builder)
                 .orderBy(blogPost.id.desc())
                 .limit(size)
