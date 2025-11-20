@@ -1,10 +1,6 @@
 # kusitms.com
 >[KUSTIMS OFFICIAL WEB SITE](https://kusitms.com/)
 
-## 프로젝트 스토리가 궁금하다면?
-[프로젝트 스토리↗️](https://insidious-spike-642.notion.site/TF-20493d67da6c428a9f6a9b9b30fa96ce)
-
-
 ## 팀원
 - `기획` 송예지 (26기, 27기)
 - `기획` 윤지원 (25기, 26기)
