@@ -26,6 +26,7 @@ public class ReviewRequest {
     public static TMPReview from(ReviewRequest request) {
         return TMPReview.builder()
                 .name(request.getName())
+                .cardinal(request.getCardinal())
                 .team(request.getTeam())
                 .review(request.getReview())
                 .build();

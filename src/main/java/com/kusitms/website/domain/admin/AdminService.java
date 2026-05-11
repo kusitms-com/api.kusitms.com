@@ -19,7 +19,6 @@ import com.kusitms.website.domain.project.entity.Team;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
 import com.kusitms.website.domain.review.dto.response.ReviewDetailResponse;
 import com.kusitms.website.domain.review.dto.response.ReviewResponse;
-import com.kusitms.website.domain.review.entity.Review;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +43,7 @@ public class AdminService {
         List<TMPReview> findReviews = reviewRepository.findAll();
 
         List<ReviewDetailResponse> reviewDetailResponses = findReviews.stream()
-                .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getTeam(), r.getReview()))
+                .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getCardinal(), r.getTeam(), r.getReview()))
                 .collect(Collectors.toList());
 
         return ReviewResponse.builder()

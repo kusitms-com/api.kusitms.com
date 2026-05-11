@@ -20,6 +20,8 @@ public class TMPReview {
     @Column(nullable = false)
     private String name;
 
+    private Integer cardinal;
+
     @Enumerated(EnumType.STRING)
     private Team team;
 
@@ -27,8 +29,9 @@ public class TMPReview {
     private String review;
 
     @Builder
-    public TMPReview(String name, Team team, String review) {
+    public TMPReview(String name, Integer cardinal, Team team, String review) {
         this.name = name;
+        this.cardinal = cardinal;
         this.team = team;
         this.review = review;
     }
