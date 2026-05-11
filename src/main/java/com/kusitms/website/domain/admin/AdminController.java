@@ -187,4 +187,14 @@ public class AdminController {
     public ResponseEntity<BaseResponse> getCorporateProjects() {
         return ResponseEntity.ok(new BaseResponse(adminService.getCorporateProjects()));
     }
+
+    @GetMapping("/admin/corporate/{id}")
+    @Operation(summary = "기업 프로젝트 상세 조회(test db)", description = "기업 프로젝트의 상세 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> getCorporateProject(@PathVariable("id") Long corporateId) {
+        return ResponseEntity.ok(new BaseResponse(adminService.getCorporateProject(corporateId)));
+    }
 }

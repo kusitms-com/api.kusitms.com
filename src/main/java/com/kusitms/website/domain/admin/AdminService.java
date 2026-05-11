@@ -214,6 +214,12 @@ public class AdminService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public CorporateDetailResponse getCorporateProject(Long corporateId) {
+        TMPCorporateProject findProject = corporateRepository.findById(corporateId).orElseThrow();
+        return new CorporateDetailResponse(findProject);
+    }
+
     @Transactional
     public void saveCorporate(CorporateRequest request) {
         String logoUrl = s3Service.uploadFile(request.getLogoFile(), "corporate");
