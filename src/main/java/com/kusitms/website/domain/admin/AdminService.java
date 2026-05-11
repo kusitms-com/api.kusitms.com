@@ -69,6 +69,25 @@ public class AdminService {
         blogReviewRepository.save(blogReview);
     }
 
+    @Transactional
+    public void updateBlogReview(BlogReviewRequest request) {
+        TMPBlogReview blogReview = blogReviewRepository.findById(request.getBlogReviewId()).orElseThrow();
+
+        String thumbnailUrl = blogReview.getThumbnailUrl();
+        if (request.getThumbnailFile() != null && !request.getThumbnailFile().isEmpty()) {
+            thumbnailUrl = s3Service.uploadFile(request.getThumbnailFile(), "blog-review");
+        }
+
+        blogReview.update(
+                request.getCardinal(),
+                request.getPart(),
+                request.getActivity(),
+                thumbnailUrl,
+                request.getTitle(),
+                request.getPreviewText()
+        );
+    }
+
     @Transactional(readOnly = true)
     public ReviewResponse getReviews() {
         List<TMPReview> findReviews = reviewRepository.findAll();

@@ -219,4 +219,15 @@ public class AdminController {
         adminService.saveBlogReview(request);
         return ResponseEntity.ok(new BaseResponse());
     }
+
+    @PutMapping(value = "/admin/blog-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "블로그 후기 수정(test db)", description = "블로그 후기를 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> updateBlogReview(@ModelAttribute BlogReviewRequest request) {
+        adminService.updateBlogReview(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
 }
