@@ -12,6 +12,7 @@ import com.kusitms.website.domain.admin.repository.TMPMeetupTeamRepository;
 import com.kusitms.website.domain.admin.repository.TMPReviewRepository;
 import com.kusitms.website.domain.blog.dto.response.BlogReviewDetailResponse;
 import com.kusitms.website.domain.blog.dto.response.BlogReviewResponse;
+import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
@@ -55,6 +56,17 @@ public class AdminService {
                 .blogReviewCount(blogReviewDetails.size())
                 .blogReviewList(blogReviewDetails)
                 .build();
+    }
+
+    @Transactional
+    public void saveBlogReview(BlogReviewRequest request) {
+        String thumbnailUrl = null;
+        if (request.getThumbnailFile() != null && !request.getThumbnailFile().isEmpty()) {
+            thumbnailUrl = s3Service.uploadFile(request.getThumbnailFile(), "blog-review");
+        }
+
+        TMPBlogReview blogReview = BlogReviewRequest.from(request, thumbnailUrl);
+        blogReviewRepository.save(blogReview);
     }
 
     @Transactional(readOnly = true)

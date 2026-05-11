@@ -2,6 +2,7 @@ package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
+import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
@@ -206,5 +207,16 @@ public class AdminController {
     })
     public ResponseEntity<BaseResponse> getBlogReviews() {
         return ResponseEntity.ok(new BaseResponse(adminService.getBlogReviews()));
+    }
+
+    @PostMapping(value = "/admin/blog-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "블로그 후기 등록(test db)", description = "블로그 후기를 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> addBlogReview(@ModelAttribute BlogReviewRequest request) {
+        adminService.saveBlogReview(request);
+        return ResponseEntity.ok(new BaseResponse());
     }
 }
