@@ -272,6 +272,7 @@ public class AdminService {
     public void updateReview(ReviewRequest request) {
       TMPReview review = reviewRepository.findById(request.getReviewId()).orElseThrow();
       review.update(request.getName(),
+              request.getCardinal(),
               request.getTeam(),
               request.getReview());
     }

@@ -36,8 +36,9 @@ public class TMPReview {
         this.review = review;
     }
 
-    public void update(String name, Team team, String review) {
+    public void update(String name, Integer cardinal, Team team, String review) {
         this.name = name;
+        this.cardinal = cardinal;
         this.team = team;
         this.review = review;
     }
