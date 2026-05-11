@@ -88,6 +88,11 @@ public class AdminService {
         );
     }
 
+    @Transactional
+    public void deleteBlogReview(Long blogReviewId) {
+        blogReviewRepository.deleteById(blogReviewId);
+    }
+
     @Transactional(readOnly = true)
     public ReviewResponse getReviews() {
         List<TMPReview> findReviews = reviewRepository.findAll();

@@ -230,4 +230,15 @@ public class AdminController {
         adminService.updateBlogReview(request);
         return ResponseEntity.ok(new BaseResponse());
     }
+
+    @DeleteMapping("/admin/blog-review/{id}")
+    @Operation(summary = "블로그 후기 삭제(test db)", description = "블로그 후기를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> deleteBlogReview(@PathVariable("id") Long blogReviewId) {
+        adminService.deleteBlogReview(blogReviewId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
 }
