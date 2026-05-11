@@ -1,13 +1,17 @@
 package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.admin.entity.TMPCorporateProject;
+import com.kusitms.website.domain.admin.entity.TMPBlogReview;
 import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
 import com.kusitms.website.domain.admin.entity.TMPMeetupTeam;
 import com.kusitms.website.domain.admin.entity.TMPReview;
+import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
 import com.kusitms.website.domain.admin.repository.TMPCorporateRepository;
 import com.kusitms.website.domain.admin.repository.TMPMeetupRepository;
 import com.kusitms.website.domain.admin.repository.TMPMeetupTeamRepository;
 import com.kusitms.website.domain.admin.repository.TMPReviewRepository;
+import com.kusitms.website.domain.blog.dto.response.BlogReviewDetailResponse;
+import com.kusitms.website.domain.blog.dto.response.BlogReviewResponse;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
@@ -37,6 +41,21 @@ public class AdminService {
     private final TMPMeetupRepository meetupRepository;
     private final TMPMeetupTeamRepository meetupTeamRepository;
     private final TMPReviewRepository reviewRepository;
+    private final TMPBlogReviewRepository blogReviewRepository;
+
+    @Transactional(readOnly = true)
+    public BlogReviewResponse getBlogReviews() {
+        List<TMPBlogReview> findBlogReviews = blogReviewRepository.findAllByOrderByBlogReviewIdDesc();
+
+        List<BlogReviewDetailResponse> blogReviewDetails = findBlogReviews.stream()
+                .map(BlogReviewDetailResponse::new)
+                .collect(Collectors.toList());
+
+        return BlogReviewResponse.builder()
+                .blogReviewCount(blogReviewDetails.size())
+                .blogReviewList(blogReviewDetails)
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public ReviewResponse getReviews() {
