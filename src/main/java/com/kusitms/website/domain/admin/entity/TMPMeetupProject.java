@@ -49,6 +49,9 @@ public class TMPMeetupProject {
     @Column(name = "app_url")
     private String appUrl;
 
+    @Column(name = "behance_url")
+    private String behanceUrl;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -64,7 +67,7 @@ public class TMPMeetupProject {
     @Builder
     public TMPMeetupProject(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
                             String logoUrl, String posterUrl, String instagramUrl, String githubUrl, String appUrl,
-                            LocalDate startDate, LocalDate endDate, String teamName) {
+                            String behanceUrl, LocalDate startDate, LocalDate endDate, String teamName) {
         this.cardinal = cardinal;
         this.name = name;
         this.intro = intro;
@@ -75,6 +78,7 @@ public class TMPMeetupProject {
         this.instagramUrl = instagramUrl;
         this.githubUrl = githubUrl;
         this.appUrl = appUrl;
+        this.behanceUrl = behanceUrl;
         this.startDate = startDate;
         this.endDate = endDate;
         this.teamName = teamName;
@@ -82,7 +86,7 @@ public class TMPMeetupProject {
 
     public void update(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
                             String logoUrl, String posterUrl, String instagramUrl, String githubUrl, String appUrl,
-                            LocalDate startDate, LocalDate endDate, String teamName) {
+                            String behanceUrl, LocalDate startDate, LocalDate endDate, String teamName) {
         this.cardinal = cardinal;
         this.name = name;
         this.intro = intro;
@@ -93,6 +97,7 @@ public class TMPMeetupProject {
         this.instagramUrl = instagramUrl;
         this.githubUrl = githubUrl;
         this.appUrl = appUrl;
+        this.behanceUrl = behanceUrl;
         this.startDate = startDate;
         this.endDate = endDate;
         this.teamName = teamName;

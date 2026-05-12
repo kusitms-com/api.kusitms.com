@@ -43,6 +43,9 @@ public class MeetupRequest {
     @Schema(description = "프로젝트 결과물 URL", example = "https://github.com/kusitms-com")
     private String appUrl;
 
+    @Schema(description = "비핸스 URL", example = "https://www.behance.net/")
+    private String behanceUrl;
+
     @Schema(description = "프로젝트 시작 날짜", example = "2022-02-12")
     private String startDate;
 
@@ -86,6 +89,7 @@ public class MeetupRequest {
                 .instagramUrl(request.getInstagramUrl())
                 .githubUrl(request.getGithubUrl())
                 .appUrl(request.getAppUrl())
+                .behanceUrl(request.getBehanceUrl())
                 .startDate(LocalDate.parse(request.getStartDate(), DateTimeFormatter.ISO_DATE))
                 .endDate(LocalDate.parse(request.getEndDate(), DateTimeFormatter.ISO_DATE))
                 .logoUrl(logoUrl)

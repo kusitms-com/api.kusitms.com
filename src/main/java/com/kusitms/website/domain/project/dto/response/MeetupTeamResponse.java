@@ -2,6 +2,7 @@ package com.kusitms.website.domain.project.dto.response;
 
 import com.kusitms.website.domain.admin.entity.TMPMeetupTeam;
 import com.kusitms.website.domain.project.entity.MeetupTeam;
+import com.kusitms.website.domain.project.entity.Team;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -29,123 +30,55 @@ public class MeetupTeamResponse {
 
     public MeetupTeamResponse(List<MeetupTeam> team, String name) {
         this.name = name;
-        getMember(team);
+        for (MeetupTeam t : team) {
+            addMember(t.getTeam(), t.getName());
+        }
+        sortAll();
     }
 
     public MeetupTeamResponse(String name, List<TMPMeetupTeam> team) {
         this.name = name;
-        getTMPMember(team);
+        for (TMPMeetupTeam t : team) {
+            addMember(t.getTeam(), t.getName());
+        }
+        sortAll();
     }
 
-    private void getMember(List<MeetupTeam> team) {
-        for(MeetupTeam t : team) {
-            switch(t.getTeam()) {
-                case PLANNER:
-                    if(planner == null) {
-                        planner = new ArrayList<>();
-                    }
-                    planner.add(t.getName());
-                    break;
-                case DESIGNER:
-                    if(designer == null) {
-                        designer = new ArrayList<>();
-                    }
-                    designer.add(t.getName());
-                    break;
-                case FRONTEND:
-                    if(frontend == null) {
-                        frontend = new ArrayList<>();
-                    }
-                    frontend.add(t.getName());
-                    break;
-                case BACKEND:
-                    if(backend == null) {
-                        backend = new ArrayList<>();
-                    }
-                    backend.add(t.getName());
-                    break;
-                case IOS:
-                    if(ios == null) {
-                        ios = new ArrayList<>();
-                    }
-                    ios.add(t.getName());
-                    break;
-                case ANDROID:
-                    if(aos == null) {
-                        aos = new ArrayList<>();
-                    }
-                    aos.add(t.getName());
-                    break;
-            }
-        }
-
-        Collections.sort(planner);
-        Collections.sort(designer);
-        Collections.sort(backend);
-        if(frontend != null) {
-            Collections.sort(frontend);
-        }
-        if(ios != null) {
-            Collections.sort(ios);
-        }
-        if(aos != null) {
-            Collections.sort(aos);
+    private void addMember(Team team, String memberName) {
+        switch (team) {
+            case PLANNER:
+                if (planner == null) planner = new ArrayList<>();
+                planner.add(memberName);
+                break;
+            case DESIGNER:
+                if (designer == null) designer = new ArrayList<>();
+                designer.add(memberName);
+                break;
+            case FRONTEND:
+                if (frontend == null) frontend = new ArrayList<>();
+                frontend.add(memberName);
+                break;
+            case BACKEND:
+                if (backend == null) backend = new ArrayList<>();
+                backend.add(memberName);
+                break;
+            case IOS:
+                if (ios == null) ios = new ArrayList<>();
+                ios.add(memberName);
+                break;
+            case ANDROID:
+                if (aos == null) aos = new ArrayList<>();
+                aos.add(memberName);
+                break;
         }
     }
 
-    private void getTMPMember(List<TMPMeetupTeam> team) {
-        for(TMPMeetupTeam t : team) {
-            switch(t.getTeam()) {
-                case PLANNER:
-                    if(planner == null) {
-                        planner = new ArrayList<>();
-                    }
-                    planner.add(t.getName());
-                    break;
-                case DESIGNER:
-                    if(designer == null) {
-                        designer = new ArrayList<>();
-                    }
-                    designer.add(t.getName());
-                    break;
-                case FRONTEND:
-                    if(frontend == null) {
-                        frontend = new ArrayList<>();
-                    }
-                    frontend.add(t.getName());
-                    break;
-                case BACKEND:
-                    if(backend == null) {
-                        backend = new ArrayList<>();
-                    }
-                    backend.add(t.getName());
-                    break;
-                case IOS:
-                    if(ios == null) {
-                        ios = new ArrayList<>();
-                    }
-                    ios.add(t.getName());
-                    break;
-                case ANDROID:
-                    if(aos == null) {
-                        aos = new ArrayList<>();
-                    }
-                    aos.add(t.getName());
-                    break;
-            }
-        }
-
-        Collections.sort(planner);
-        Collections.sort(designer);
-        Collections.sort(backend);
-        if(frontend != null) {
-            Collections.sort(frontend);
-        }
-        if(ios != null) {
-            Collections.sort(ios);
-        }
-        if(aos != null) {
-            Collections.sort(aos);
-        }
+    private void sortAll() {
+        if (planner != null) Collections.sort(planner);
+        if (designer != null) Collections.sort(designer);
+        if (frontend != null) Collections.sort(frontend);
+        if (backend != null) Collections.sort(backend);
+        if (ios != null) Collections.sort(ios);
+        if (aos != null) Collections.sort(aos);
     }
 }
