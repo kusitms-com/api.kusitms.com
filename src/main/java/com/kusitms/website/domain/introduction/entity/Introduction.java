@@ -24,6 +24,10 @@ public class Introduction {
     @Column(name = "banner_status")
     @Enumerated(EnumType.STRING)
     private BannerStatus bannerStatus;
+    @Column(name = "slogan", length = 50)
+    private String slogan;
+    @Column(name = "banner_image_url")
+    private String bannerImageUrl;
 
     // 학회 정보
     @Column(name = "member_count")
@@ -37,9 +41,19 @@ public class Introduction {
     @Column(name = "intro_youtube_link")
     private String introYoutubeLink;
 
-    // 파트너사 이미지
+    // 파트너사 이미지 (기존 단일 필드 유지 — 하위호환)
     @Column(name = "partner_image_url")
     private String partnerImageUrl;
+
+    // 함께하는 큐밀리 이미지
+    @Column(name = "planning_image_url")
+    private String planningImageUrl;
+    @Column(name = "design_image_url")
+    private String designImageUrl;
+    @Column(name = "frontend_image_url")
+    private String frontendImageUrl;
+    @Column(name = "backend_image_url")
+    private String backendImageUrl;
 
     // 운영진 소개
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
@@ -53,32 +67,62 @@ public class Introduction {
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
     private List<OBLecture> obLecture = new ArrayList<>();
 
+    // 파트너사 로고 목록 (배열)
+    @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    private List<PartnerLogo> partnerLogos = new ArrayList<>();
+
+    // 밋업 이미지 목록
+    @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    private List<IntroMeetupImage> meetupImages = new ArrayList<>();
+
+    // 활동 소개
+    @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    private List<Activity> activities = new ArrayList<>();
+
+    // 후원사
+    @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    private List<Sponsor> sponsors = new ArrayList<>();
 
     @Builder
-    public Introduction(Long bannerCardinal, BannerStatus bannerStatus,
+    public Introduction(Long bannerCardinal, BannerStatus bannerStatus, String slogan, String bannerImageUrl,
                         Long memberCount, Long projectCount, Long universityCount,
-                        String partnerImageUrl, String introYoutubeLink)
+                        String partnerImageUrl, String introYoutubeLink,
+                        String planningImageUrl, String designImageUrl,
+                        String frontendImageUrl, String backendImageUrl)
     {
         this.bannerCardinal = bannerCardinal;
         this.bannerStatus = bannerStatus;
+        this.slogan = slogan;
+        this.bannerImageUrl = bannerImageUrl;
         this.memberCount = memberCount;
         this.projectCount = projectCount;
         this.universityCount = universityCount;
         this.partnerImageUrl = partnerImageUrl;
         this.introYoutubeLink = introYoutubeLink;
+        this.planningImageUrl = planningImageUrl;
+        this.designImageUrl = designImageUrl;
+        this.frontendImageUrl = frontendImageUrl;
+        this.backendImageUrl = backendImageUrl;
     }
 
-    public void update(Long bannerCardinal, BannerStatus bannerStatus,
+    public void update(Long bannerCardinal, BannerStatus bannerStatus, String slogan, String bannerImageUrl,
                         Long memberCount, Long projectCount, Long universityCount,
-                        String partnerImageUrl, String introYoutubeLink)
+                        String partnerImageUrl, String introYoutubeLink,
+                        String planningImageUrl, String designImageUrl,
+                        String frontendImageUrl, String backendImageUrl)
     {
         this.bannerCardinal = bannerCardinal;
         this.bannerStatus = bannerStatus;
+        this.slogan = slogan;
+        this.bannerImageUrl = bannerImageUrl;
         this.memberCount = memberCount;
         this.projectCount = projectCount;
         this.universityCount = universityCount;
         this.partnerImageUrl = partnerImageUrl;
         this.introYoutubeLink = introYoutubeLink;
+        this.planningImageUrl = planningImageUrl;
+        this.designImageUrl = designImageUrl;
+        this.frontendImageUrl = frontendImageUrl;
+        this.backendImageUrl = backendImageUrl;
     }
-
 }
