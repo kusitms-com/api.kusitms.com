@@ -30,6 +30,16 @@ public class AdminController {
     private final AdminService adminService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    @GetMapping("/admin/introductions")
+    @Operation(summary = "학회 소개 정보 조회", description = "학회 소개 페이지의 현재 저장된 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> getIntroduction() {
+        return ResponseEntity.ok(new BaseResponse(introService.getAdminIntroduction()));
+    }
+
     @Hidden
     @PostMapping(value = "/admin/introductions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse> addIntroduction(@ModelAttribute IntroRequest request) {
