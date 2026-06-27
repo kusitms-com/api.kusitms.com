@@ -14,6 +14,9 @@ public class ReviewRequest {
     @Schema(description = "이름", example = "김큐시")
     private String name;
 
+    @Schema(description = "기수", example = "33")
+    private Integer cardinal;
+
     @Schema(description = "소속팀", example = "PLANNER, DESIGNER, DEVELOPER")
     private Team team;
 
@@ -23,6 +26,7 @@ public class ReviewRequest {
     public static TMPReview from(ReviewRequest request) {
         return TMPReview.builder()
                 .name(request.getName())
+                .cardinal(request.getCardinal())
                 .team(request.getTeam())
                 .review(request.getReview())
                 .build();

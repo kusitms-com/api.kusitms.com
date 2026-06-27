@@ -15,7 +15,7 @@ public class ReviewDetailResponse {
     @Schema(description = "이름")
     private String name;
 
-    @Schema(description = "기수")
+    @Schema(description = "기수", example = "33")
     private Integer cardinal;
 
     @Schema(description = "소속팀")

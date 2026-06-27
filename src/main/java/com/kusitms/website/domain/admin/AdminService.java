@@ -1,13 +1,18 @@
 package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.admin.entity.TMPCorporateProject;
+import com.kusitms.website.domain.admin.entity.TMPBlogReview;
 import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
 import com.kusitms.website.domain.admin.entity.TMPMeetupTeam;
 import com.kusitms.website.domain.admin.entity.TMPReview;
+import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
 import com.kusitms.website.domain.admin.repository.TMPCorporateRepository;
 import com.kusitms.website.domain.admin.repository.TMPMeetupRepository;
 import com.kusitms.website.domain.admin.repository.TMPMeetupTeamRepository;
 import com.kusitms.website.domain.admin.repository.TMPReviewRepository;
+import com.kusitms.website.domain.blog.dto.response.BlogReviewDetailResponse;
+import com.kusitms.website.domain.blog.dto.response.BlogReviewResponse;
+import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
@@ -19,7 +24,6 @@ import com.kusitms.website.domain.project.entity.Team;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
 import com.kusitms.website.domain.review.dto.response.ReviewDetailResponse;
 import com.kusitms.website.domain.review.dto.response.ReviewResponse;
-import com.kusitms.website.domain.review.entity.Review;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,13 +42,63 @@ public class AdminService {
     private final TMPMeetupRepository meetupRepository;
     private final TMPMeetupTeamRepository meetupTeamRepository;
     private final TMPReviewRepository reviewRepository;
+    private final TMPBlogReviewRepository blogReviewRepository;
+
+    @Transactional(readOnly = true)
+    public BlogReviewResponse getBlogReviews() {
+        List<TMPBlogReview> findBlogReviews = blogReviewRepository.findAllByOrderByBlogReviewIdDesc();
+
+        List<BlogReviewDetailResponse> blogReviewDetails = findBlogReviews.stream()
+                .map(BlogReviewDetailResponse::new)
+                .collect(Collectors.toList());
+
+        return BlogReviewResponse.builder()
+                .blogReviewCount(blogReviewDetails.size())
+                .blogReviewList(blogReviewDetails)
+                .build();
+    }
+
+    @Transactional
+    public void saveBlogReview(BlogReviewRequest request) {
+        String thumbnailUrl = null;
+        if (request.getThumbnailFile() != null && !request.getThumbnailFile().isEmpty()) {
+            thumbnailUrl = s3Service.uploadFile(request.getThumbnailFile(), "blog-review");
+        }
+
+        TMPBlogReview blogReview = BlogReviewRequest.from(request, thumbnailUrl);
+        blogReviewRepository.save(blogReview);
+    }
+
+    @Transactional
+    public void updateBlogReview(BlogReviewRequest request) {
+        TMPBlogReview blogReview = blogReviewRepository.findById(request.getBlogReviewId()).orElseThrow();
+
+        String thumbnailUrl = blogReview.getThumbnailUrl();
+        if (request.getThumbnailFile() != null && !request.getThumbnailFile().isEmpty()) {
+            thumbnailUrl = s3Service.uploadFile(request.getThumbnailFile(), "blog-review");
+        }
+
+        blogReview.update(
+                request.getCardinal(),
+                request.getPart(),
+                request.getActivity(),
+                thumbnailUrl,
+                request.getTitle(),
+                request.getPreviewText()
+        );
+    }
+
+    @Transactional
+    public void deleteBlogReview(Long blogReviewId) {
+        blogReviewRepository.deleteById(blogReviewId);
+    }
 
     @Transactional(readOnly = true)
     public ReviewResponse getReviews() {
         List<TMPReview> findReviews = reviewRepository.findAll();
 
         List<ReviewDetailResponse> reviewDetailResponses = findReviews.stream()
-                .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getTeam(), r.getReview()))
+                .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getCardinal(), r.getTeam(), r.getReview()))
                 .collect(Collectors.toList());
 
         return ReviewResponse.builder()
@@ -215,6 +269,12 @@ public class AdminService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public CorporateDetailResponse getCorporateProject(Long corporateId) {
+        TMPCorporateProject findProject = corporateRepository.findById(corporateId).orElseThrow();
+        return new CorporateDetailResponse(findProject);
+    }
+
     @Transactional
     public void saveCorporate(CorporateRequest request) {
         String logoUrl = s3Service.uploadFile(request.getLogoFile(), "corporate");
@@ -273,6 +333,7 @@ public class AdminService {
     public void updateReview(ReviewRequest request) {
       TMPReview review = reviewRepository.findById(request.getReviewId()).orElseThrow();
       review.update(request.getName(),
+              request.getCardinal(),
               request.getTeam(),
               request.getReview());
     }

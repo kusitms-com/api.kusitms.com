@@ -2,6 +2,7 @@ package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
+import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
@@ -186,5 +187,58 @@ public class AdminController {
     })
     public ResponseEntity<BaseResponse> getCorporateProjects() {
         return ResponseEntity.ok(new BaseResponse(adminService.getCorporateProjects()));
+    }
+
+    @GetMapping("/admin/corporate/{id}")
+    @Operation(summary = "기업 프로젝트 상세 조회(test db)", description = "기업 프로젝트의 상세 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> getCorporateProject(@PathVariable("id") Long corporateId) {
+        return ResponseEntity.ok(new BaseResponse(adminService.getCorporateProject(corporateId)));
+    }
+
+    @GetMapping("/admin/blog-review")
+    @Operation(summary = "블로그 후기 리스트(test db)", description = "블로그 후기의 모든 리스트를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> getBlogReviews() {
+        return ResponseEntity.ok(new BaseResponse(adminService.getBlogReviews()));
+    }
+
+    @PostMapping(value = "/admin/blog-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "블로그 후기 등록(test db)", description = "블로그 후기를 등록합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> addBlogReview(@ModelAttribute BlogReviewRequest request) {
+        adminService.saveBlogReview(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PutMapping(value = "/admin/blog-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "블로그 후기 수정(test db)", description = "블로그 후기를 수정합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> updateBlogReview(@ModelAttribute BlogReviewRequest request) {
+        adminService.updateBlogReview(request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @DeleteMapping("/admin/blog-review/{id}")
+    @Operation(summary = "블로그 후기 삭제(test db)", description = "블로그 후기를 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+    })
+    public ResponseEntity<BaseResponse> deleteBlogReview(@PathVariable("id") Long blogReviewId) {
+        adminService.deleteBlogReview(blogReviewId);
+        return ResponseEntity.ok(new BaseResponse());
     }
 }
