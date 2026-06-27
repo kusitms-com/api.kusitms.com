@@ -27,10 +27,10 @@ import com.kusitms.website.domain.review.dto.response.ReviewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -185,8 +185,8 @@ public class AdminService {
     public void updateMeetup(MeetupRequest request) {
         TMPMeetupProject meetup = meetupRepository.findById(request.getMeetupId()).orElseThrow();
 
-        String logoUrl = s3Service.uploadFile(request.getLogoFile(), "meetup");
-        String posterUrl = s3Service.uploadFile(request.getPosterFile(), "meetup");
+        String logoUrl = uploadOrKeep(request.getLogoFile(), meetup.getLogoUrl(), "meetup");
+        String posterUrl = uploadOrKeep(request.getPosterFile(), meetup.getPosterUrl(), "meetup");
 
         meetup.update(request.getCardinal(),
                 request.getName(),
@@ -198,6 +198,7 @@ public class AdminService {
                 request.getInstagramUrl(),
                 request.getGithubUrl(),
                 request.getAppUrl(),
+                request.getBehanceUrl(),
                 LocalDate.parse(request.getStartDate(), DateTimeFormatter.ISO_DATE),
                 LocalDate.parse(request.getEndDate(), DateTimeFormatter.ISO_DATE),
                 request.getTeamName());
@@ -341,5 +342,10 @@ public class AdminService {
     @Transactional
     public void deleteReview(Long reviewId) {
         reviewRepository.deleteById(reviewId);
+    }
+
+    private String uploadOrKeep(MultipartFile file, String existingUrl, String dirName) {
+        if (file == null || file.isEmpty()) return existingUrl;
+        return s3Service.uploadFile(file, dirName);
     }
 }

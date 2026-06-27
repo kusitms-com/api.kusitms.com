@@ -114,6 +114,7 @@ public class MeetupDetailResponse {
         this.posterUrl = s3Url + meetup.getPosterUrl();
         this.logoUrl = s3Url + meetup.getLogoUrl();
         this.oneLineIntro = meetup.getOneLineIntro();
+        this.behanceUrl = meetup.getBehanceUrl();
         this.instagramUrl = meetup.getInstagramUrl();
         this.githubUrl = meetup.getGithubUrl();
         this.appUrl = meetup.getAppUrl();
