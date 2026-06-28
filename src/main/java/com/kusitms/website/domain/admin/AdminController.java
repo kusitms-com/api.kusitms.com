@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.admin;
 
+import com.kusitms.website.domain.admin.dto.response.PendingMemberResponse;
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
 import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
@@ -18,9 +19,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 public class AdminController {
     private final IntroService introService;
     private final AdminService adminService;
+    private final MemberAdminService memberAdminService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/admin/introductions")
@@ -249,6 +254,33 @@ public class AdminController {
     })
     public ResponseEntity<BaseResponse> deleteBlogReview(@PathVariable("id") Long blogReviewId) {
         adminService.deleteBlogReview(blogReviewId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @GetMapping("/admin/members/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "승인 대기 회원 목록 조회", description = "가입 승인 대기 중인 회원 목록을 조회합니다.")
+    public ResponseEntity<BaseResponse<List<PendingMemberResponse>>> getPendingMembers() {
+        return ResponseEntity.ok(new BaseResponse<>(memberAdminService.getPendingMembers()));
+    }
+
+    @PostMapping("/admin/members/{userId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "회원 가입 승인", description = "대기 중인 회원의 가입을 승인합니다.")
+    public ResponseEntity<BaseResponse> approveMember(
+            @PathVariable Long userId
+    ) {
+        memberAdminService.approveMember(userId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PostMapping("/admin/members/{userId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "회원 가입 반려", description = "대기 중인 회원의 가입을 반려하고 계정을 삭제합니다.")
+    public ResponseEntity<BaseResponse> rejectMember(
+            @PathVariable Long userId
+    ) {
+        memberAdminService.rejectMember(userId);
         return ResponseEntity.ok(new BaseResponse());
     }
 }
