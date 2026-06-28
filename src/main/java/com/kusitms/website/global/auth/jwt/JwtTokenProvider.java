@@ -22,12 +22,12 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    // 1시간
-    private final long TOKEN_VALID_MILISECOND = 1000L * 60 * 60;
+    private static final long ACCESS_TOKEN_VALIDITY = 1000L * 60 * 60; // 1시간
+    private static final long REFRESH_TOKEN_VALIDITY = 1000L * 60 * 60 * 24 * 7; // 7일
 
     private final UserDetailsService userDetailsService;
 
-    @Value("spring.jwt.secretkey")
+    @Value("${spring.jwt.secretkey}")
     private String secretKey;
 
     @PostConstruct
@@ -36,24 +36,37 @@ public class JwtTokenProvider {
     }
 
     public String makeJwtToken(Long userId) {
+        return createToken(userId, ACCESS_TOKEN_VALIDITY, "access");
+    }
+
+    public String makeRefreshToken(Long userId) {
+        return createToken(userId, REFRESH_TOKEN_VALIDITY, "refresh");
+    }
+
+    private String createToken(Long userId, long validity, String tokenType) {
         Claims claims = Jwts.claims().setSubject(Long.toString(userId));
+        claims.put("type", tokenType);
         Date now = new Date();
 
         return Jwts.builder()
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + TOKEN_VALID_MILISECOND))
+                .setExpiration(new Date(now.getTime() + validity))
                 .setClaims(claims)
                 .signWith(SignatureAlgorithm.HS512, secretKey)
                 .compact();
     }
 
-    // 인증 성공시 SecurityContextHolder에 저장할 Authentication 객체 생성
     public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(this.getUserPk(token)));
+        Claims claims = Jwts.parser().setSigningKey(secretKey)
+                .parseClaimsJws(token).getBody();
+        String tokenType = claims.get("type", String.class);
+        if (!"access".equals(tokenType)) {
+            throw new IllegalArgumentException("액세스 토큰이 아닙니다.");
+        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(claims.getSubject());
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    // Jwt Token에서 User PK 추출
     public Long getUserPk(String token) {
         Claims claims = Jwts.parser().setSigningKey(secretKey)
                 .parseClaimsJws(token).getBody();
@@ -69,7 +82,6 @@ public class JwtTokenProvider {
         return null;
     }
 
-    // Jwt Token의 유효성 및 만료 기간 검사
     public boolean validateToken(String jwtToken) {
         Jwts.parser().setSigningKey(secretKey).parseClaimsJws(jwtToken);
         return true;
