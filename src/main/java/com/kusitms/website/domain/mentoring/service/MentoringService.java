@@ -103,13 +103,12 @@ public class MentoringService {
         Mentor mentor = mentorRepository.findById(mentorId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 멘토입니다."));
 
-        if (mentor.getMember().getUserId().equals(applicantUserId)) {
-            throw new IllegalArgumentException("본인 멘토링에는 신청할 수 없습니다.");
+        if (!mentor.isActive()) {
+            throw new IllegalArgumentException("현재 활동 중이지 않은 멘토입니다.");
         }
 
-        if (applicationRepository.existsByMentorIdAndApplicantIdAndStatusIn(
-                mentorId, applicantUserId, OCCUPYING_STATUSES)) {
-            throw new IllegalArgumentException("이미 진행 중인 신청이 존재합니다.");
+        if (mentor.getMember().getUserId().equals(applicantUserId)) {
+            throw new IllegalArgumentException("본인 멘토링에는 신청할 수 없습니다.");
         }
 
         MentoringSlot slot = slotRepository.findByIdWithLock(request.getSlotId())
@@ -117,6 +116,15 @@ public class MentoringService {
 
         if (!slot.getMentor().getMentorId().equals(mentorId)) {
             throw new IllegalArgumentException("해당 멘토의 슬롯이 아닙니다.");
+        }
+
+        if (slot.getDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("이미 지난 날짜의 슬롯에는 신청할 수 없습니다.");
+        }
+
+        if (applicationRepository.existsByMentorIdAndApplicantIdAndStatusIn(
+                mentorId, applicantUserId, OCCUPYING_STATUSES)) {
+            throw new IllegalArgumentException("이미 진행 중인 신청이 존재합니다.");
         }
 
         if (applicationRepository.existsBySlotSlotIdAndApplicantUserIdAndStatusIn(

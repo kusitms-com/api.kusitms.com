@@ -9,6 +9,7 @@ import com.kusitms.website.domain.mentoring.entity.MentoringCategory;
 import com.kusitms.website.domain.mentoring.service.MentoringService;
 import com.kusitms.website.global.auth.UserPrincipal;
 import com.kusitms.website.global.common.BaseResponse;
+import javax.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -80,7 +81,7 @@ public class MentoringController {
     })
     public ResponseEntity<BaseResponse> applyMentoring(
             @PathVariable Long mentorId,
-            @RequestBody MentoringApplyRequest request) {
+            @Valid @RequestBody MentoringApplyRequest request) {
         Long userId = getAuthenticatedUserId();
         mentoringService.applyMentoring(mentorId, userId, request);
         return ResponseEntity.ok(new BaseResponse());
