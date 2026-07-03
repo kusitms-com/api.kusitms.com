@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -68,6 +69,19 @@ public class MypageController {
             @RequestBody @Valid PasswordChangeRequest request) {
         Long userId = getAuthenticatedUserId();
         mypageService.changePassword(userId, request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @DeleteMapping("/account")
+    @Operation(summary = "회원탈퇴", description = "로그인한 사용자의 계정을 탈퇴 처리합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "탈퇴 성공"),
+            @ApiResponse(responseCode = "400", description = "탈퇴 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> withdrawAccount() {
+        Long userId = getAuthenticatedUserId();
+        mypageService.withdrawAccount(userId);
         return ResponseEntity.ok(new BaseResponse());
     }
 

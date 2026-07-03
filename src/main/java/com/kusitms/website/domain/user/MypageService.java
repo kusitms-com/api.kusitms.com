@@ -1,5 +1,8 @@
 package com.kusitms.website.domain.user;
 
+import com.kusitms.website.domain.mentoring.entity.ApplicationStatus;
+import com.kusitms.website.domain.mentoring.repository.MentorRepository;
+import com.kusitms.website.domain.mentoring.repository.MentoringApplicationRepository;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
@@ -26,6 +29,8 @@ public class MypageService {
     private static final List<String> ALLOWED_EXTENSIONS = List.of("jpg", "jpeg", "png");
 
     private final MemberRepository memberRepository;
+    private final MentoringApplicationRepository mentoringApplicationRepository;
+    private final MentorRepository mentorRepository;
     private final S3Service s3Service;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
@@ -76,6 +81,23 @@ public class MypageService {
         }
 
         member.updatePassword(bCryptPasswordEncoder.encode(request.getNewPassword()));
+    }
+
+    @Transactional
+    public void withdrawAccount(Long userId) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        boolean hasActiveMentoring = mentoringApplicationRepository
+                .existsByUserIdAndStatus(userId, ApplicationStatus.ACTIVE);
+        if (hasActiveMentoring) {
+            throw new IllegalArgumentException("진행 중인 멘토링이 있어 탈퇴할 수 없습니다. 멘토링 완료 후 다시 시도해 주세요.");
+        }
+
+        mentorRepository.findByMemberUserId(userId)
+                .ifPresent(mentor -> mentor.deactivate());
+
+        member.withdraw();
     }
 
     private void validateImageFile(MultipartFile file) {

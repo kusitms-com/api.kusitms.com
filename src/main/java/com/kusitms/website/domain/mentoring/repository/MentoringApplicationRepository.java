@@ -26,4 +26,12 @@ public interface MentoringApplicationRepository extends JpaRepository<MentoringA
             @Param("mentorId") Long mentorId,
             @Param("userId") Long userId,
             @Param("statuses") List<ApplicationStatus> statuses);
+
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END " +
+            "FROM MentoringApplication a " +
+            "WHERE a.status = :status " +
+            "AND (a.applicant.userId = :userId OR a.slot.mentor.member.userId = :userId)")
+    boolean existsByUserIdAndStatus(
+            @Param("userId") Long userId,
+            @Param("status") ApplicationStatus status);
 }
