@@ -2,8 +2,10 @@ package com.kusitms.website.domain.user;
 
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +18,8 @@ import java.util.regex.Pattern;
 @Transactional(readOnly = true)
 public class MypageService {
 
+    private static final Pattern PASSWORD_PATTERN =
+            Pattern.compile("^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,}$");
     private static final Pattern PHONE_PATTERN =
             Pattern.compile("^010\\d{8}$");
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -23,6 +27,7 @@ public class MypageService {
 
     private final MemberRepository memberRepository;
     private final S3Service s3Service;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public AccountProfileResponse getAccountProfile(Long userId) {
         Member member = memberRepository.findById(userId)
@@ -53,6 +58,24 @@ public class MypageService {
 
         member.updateAccountProfile(request.getName(), normalizedPhone, profileImageUrl);
         return AccountProfileResponse.from(member);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, PasswordChangeRequest request) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        if (!bCryptPasswordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
+        }
+        if (!PASSWORD_PATTERN.matcher(request.getNewPassword()).matches()) {
+            throw new IllegalArgumentException("영문, 숫자, 특수문자를 포함해 8자 이상이어야 합니다.");
+        }
+        if (!request.getNewPassword().equals(request.getNewPasswordConfirm())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        member.updatePassword(bCryptPasswordEncoder.encode(request.getNewPassword()));
     }
 
     private void validateImageFile(MultipartFile file) {

@@ -1,6 +1,7 @@
 package com.kusitms.website.domain.user;
 
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.global.auth.UserPrincipal;
 import com.kusitms.website.global.common.BaseResponse;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,6 +55,20 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(new BaseResponse<>(
                 mypageService.updateAccountProfile(userId, request, profileImage)));
+    }
+
+    @PutMapping("/account/password")
+    @Operation(summary = "비밀번호 변경", description = "로그인한 사용자의 비밀번호를 변경합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "변경 성공"),
+            @ApiResponse(responseCode = "400", description = "요청 값 오류"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> changePassword(
+            @RequestBody @Valid PasswordChangeRequest request) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.changePassword(userId, request);
+        return ResponseEntity.ok(new BaseResponse());
     }
 
     private Long getAuthenticatedUserId() {

@@ -85,6 +85,10 @@ public class Member {
         }
     }
 
+    public void updatePassword(String password) {
+        this.password = password;
+    }
+
     public void approve() {
         this.status = MemberStatus.APPROVED;
     }
