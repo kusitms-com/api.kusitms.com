@@ -146,6 +146,13 @@ public class MemberService {
         return new CurrentCardinalResponse(cardinal);
     }
 
+    @Transactional
+    public void logout(Long userId) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        member.clearRefreshToken();
+    }
+
     public List<Member> getPendingMembers() {
         return memberRepository.findAllByStatus(MemberStatus.PENDING);
     }
