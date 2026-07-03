@@ -77,6 +77,14 @@ public class Member {
         this.role = role;
     }
 
+    public void updateAccountProfile(String name, String phone, String profileImageUrl) {
+        this.name = name;
+        this.phone = phone;
+        if (profileImageUrl != null) {
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
+
     public void approve() {
         this.status = MemberStatus.APPROVED;
     }
