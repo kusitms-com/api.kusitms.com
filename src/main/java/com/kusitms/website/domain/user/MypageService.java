@@ -35,9 +35,7 @@ public class MypageService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public AccountProfileResponse getAccountProfile(Long userId) {
-        Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-
+        Member member = getActiveMember(userId);
         return AccountProfileResponse.from(member);
     }
 
@@ -47,8 +45,7 @@ public class MypageService {
             AccountProfileUpdateRequest request,
             MultipartFile profileImage
     ) {
-        Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        Member member = getActiveMember(userId);
 
         String normalizedPhone = normalizePhone(request.getPhone());
         if (!PHONE_PATTERN.matcher(normalizedPhone).matches()) {
@@ -67,8 +64,7 @@ public class MypageService {
 
     @Transactional
     public void changePassword(Long userId, PasswordChangeRequest request) {
-        Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        Member member = getActiveMember(userId);
 
         if (!bCryptPasswordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
             throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
@@ -85,8 +81,7 @@ public class MypageService {
 
     @Transactional
     public void withdrawAccount(Long userId) {
-        Member member = memberRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        Member member = getActiveMember(userId);
 
         boolean hasActiveMentoring = mentoringApplicationRepository
                 .existsByUserIdAndStatus(userId, ApplicationStatus.ACTIVE);
@@ -98,6 +93,15 @@ public class MypageService {
                 .ifPresent(mentor -> mentor.deactivate());
 
         member.withdraw();
+    }
+
+    private Member getActiveMember(Long userId) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        if (member.getStatus() == MemberStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("이미 탈퇴한 계정입니다.");
+        }
+        return member;
     }
 
     private void validateImageFile(MultipartFile file) {
