@@ -4,12 +4,15 @@ import com.kusitms.website.domain.user.dto.request.SignInRequest;
 import com.kusitms.website.domain.user.dto.request.SignUpRequest;
 import com.kusitms.website.domain.user.dto.response.CurrentCardinalResponse;
 import com.kusitms.website.domain.user.dto.response.SignInResponse;
+import com.kusitms.website.global.auth.UserPrincipal;
 import com.kusitms.website.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -58,10 +61,28 @@ public class MemberController {
         return ResponseEntity.ok(new BaseResponse<>(response));
     }
 
+    @Operation(summary = "로그아웃")
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse> logout() {
+        Long userId = getAuthenticatedUserId();
+        memberService.logout(userId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
     @Operation(summary = "현재 기수 조회")
     @GetMapping("/current-cardinal")
     public ResponseEntity<BaseResponse<CurrentCardinalResponse>> getCurrentCardinal() {
         CurrentCardinalResponse response = memberService.getCurrentCardinal();
         return ResponseEntity.ok(new BaseResponse<>(response));
+    }
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getPrincipal().equals("anonymousUser")) {
+            throw new IllegalArgumentException("로그인이 필요합니다.");
+        }
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        return principal.getPk();
     }
 }

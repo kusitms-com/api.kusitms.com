@@ -65,4 +65,8 @@ public class Mentor {
         this.active = active;
         this.createdAt = LocalDateTime.now();
     }
+
+    public void deactivate() {
+        this.active = false;
+    }
 }

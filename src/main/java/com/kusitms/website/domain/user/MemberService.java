@@ -86,6 +86,9 @@ public class MemberService {
         if (member.getStatus() == MemberStatus.PENDING) {
             throw new IllegalArgumentException("관리자 승인 대기 중인 계정입니다. 승인 후 로그인해 주세요.");
         }
+        if (member.getStatus() == MemberStatus.WITHDRAWN) {
+            throw new IllegalArgumentException("이미 탈퇴한 계정입니다.");
+        }
 
         if (!bCryptPasswordEncoder.matches(request.getPassword(), member.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
@@ -144,6 +147,13 @@ public class MemberService {
     public CurrentCardinalResponse getCurrentCardinal() {
         Integer cardinal = getCurrentCardinalValue();
         return new CurrentCardinalResponse(cardinal);
+    }
+
+    @Transactional
+    public void logout(Long userId) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        member.clearRefreshToken();
     }
 
     public List<Member> getPendingMembers() {

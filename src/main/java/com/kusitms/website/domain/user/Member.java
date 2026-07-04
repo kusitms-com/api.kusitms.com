@@ -1,11 +1,12 @@
 package com.kusitms.website.domain.user;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -75,6 +76,33 @@ public class Member {
 
     public void updateRole(MemberRole role) {
         this.role = role;
+    }
+
+    public void updateAccountProfile(String name, String phone, String profileImageUrl) {
+        this.name = name;
+        this.phone = phone;
+        if (profileImageUrl != null) {
+            this.profileImageUrl = profileImageUrl;
+        }
+    }
+
+    public void updatePassword(String password) {
+        this.password = password;
+    }
+
+    public void withdraw() {
+        String suffix = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
+        this.id = "withdrawn_" + this.userId + "_" + suffix;
+        this.password = null;
+        this.name = "탈퇴한 회원";
+        this.phone = null;
+        this.part = null;
+        this.profileImageUrl = null;
+        this.certificateImageUrl = null;
+        this.email = null;
+        this.role = null;
+        this.refreshToken = null;
+        this.status = MemberStatus.WITHDRAWN;
     }
 
     public void approve() {
