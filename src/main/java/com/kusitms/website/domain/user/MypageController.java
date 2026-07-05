@@ -1,8 +1,19 @@
 package com.kusitms.website.domain.user;
 
+import com.kusitms.website.domain.mentoring.dto.response.MentoringReviewListResponse;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.ApplicationRejectRequest;
+import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
+import com.kusitms.website.domain.user.dto.request.OBProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.OBProfileVisibilityUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.OBScheduleUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
+import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
+import com.kusitms.website.domain.user.dto.response.OBMentoringRequestsResponse;
+import com.kusitms.website.domain.user.dto.response.OBProfileResponse;
+import com.kusitms.website.domain.user.dto.response.OBScheduleResponse;
+import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
 import com.kusitms.website.global.auth.UserPrincipal;
 import com.kusitms.website.global.common.BaseResponse;
 import javax.validation.Valid;
@@ -17,9 +28,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +45,17 @@ import org.springframework.web.multipart.MultipartFile;
 public class MypageController {
 
     private final MypageService mypageService;
+
+    @GetMapping
+    @Operation(summary = "YB 마이페이지 조회", description = "로그인한 YB 사용자의 마이페이지 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<YBMypageResponse>> getYBMypage() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(mypageService.getYBMypage(userId)));
+    }
 
     @GetMapping("/account")
     @Operation(summary = "내 계정 정보 조회", description = "로그인한 사용자의 계정 정보를 조회합니다.")
@@ -70,6 +95,157 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         mypageService.changePassword(userId, request);
         return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @GetMapping("/applications/{applicationId}/rejection-reason")
+    @Operation(summary = "거절 사유 조회", description = "로그인한 사용자의 거절된 멘토링 신청 사유를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<ApplicationRejectionReasonResponse>> getApplicationRejectionReason(
+            @PathVariable Long applicationId) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.getApplicationRejectionReason(userId, applicationId)));
+    }
+
+    @PostMapping("/reviews")
+    @Operation(summary = "멘토링 후기 작성", description = "완료된 멘토링에 대한 후기를 작성합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "작성 성공"),
+            @ApiResponse(responseCode = "400", description = "작성 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> createMentoringReview(
+            @RequestBody @Valid MentoringReviewCreateRequest request) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.createMentoringReview(userId, request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @GetMapping("/ob/profile")
+    @Operation(summary = "OB 프로필 조회", description = "로그인한 OB 사용자의 멘토 프로필 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBProfileResponse>> getOBProfile() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(mypageService.getOBProfile(userId)));
+    }
+
+    @PutMapping(value = "/ob/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "OB 프로필 저장", description = "로그인한 OB 사용자의 멘토 프로필 정보를 저장합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "저장 성공"),
+            @ApiResponse(responseCode = "400", description = "저장 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBProfileResponse>> updateOBProfile(
+            @RequestPart("obProfileUpdateRequest") @Valid OBProfileUpdateRequest request,
+            @RequestPart(value = "mentorProfileImage", required = false) MultipartFile mentorProfileImage) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.updateOBProfile(userId, request, mentorProfileImage)));
+    }
+
+    @PutMapping("/ob/profile/visibility")
+    @Operation(summary = "OB 프로필 공개 토글", description = "멘토링 신청 받기 토글 상태를 변경합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "변경 성공"),
+            @ApiResponse(responseCode = "400", description = "변경 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBProfileResponse>> updateOBProfileVisibility(
+            @RequestBody @Valid OBProfileVisibilityUpdateRequest request) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.updateOBProfileVisibility(userId, request)));
+    }
+
+    @GetMapping("/ob/schedule")
+    @Operation(summary = "OB 가능 시간 조회", description = "로그인한 OB 사용자의 가능 시간 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBScheduleResponse>> getOBSchedule() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(mypageService.getOBSchedule(userId)));
+    }
+
+    @PutMapping("/ob/schedule")
+    @Operation(summary = "OB 가능 시간 저장", description = "로그인한 OB 사용자의 날짜별 가능 시간을 저장합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "저장 성공"),
+            @ApiResponse(responseCode = "400", description = "저장 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBScheduleResponse>> updateOBSchedule(
+            @RequestBody @Valid OBScheduleUpdateRequest request) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.updateOBSchedule(userId, request)));
+    }
+
+    @GetMapping("/ob/requests")
+    @Operation(summary = "OB 멘토링 요청 목록 조회", description = "로그인한 OB 사용자의 멘토링 요청 목록을 상태별로 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBMentoringRequestsResponse>> getOBMentoringRequests(
+            @RequestParam(defaultValue = "0") int page) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.getOBMentoringRequests(userId, page)));
+    }
+
+    @PostMapping("/ob/requests/{applicationId}/reject")
+    @Operation(summary = "OB 멘토링 요청 거절", description = "대기 중인 멘토링 요청을 거절하고 사유를 저장합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "거절 성공"),
+            @ApiResponse(responseCode = "400", description = "거절 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> rejectOBMentoringRequest(
+            @PathVariable Long applicationId,
+            @RequestBody @Valid ApplicationRejectRequest request) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.rejectOBMentoringRequest(userId, applicationId, request);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PostMapping("/ob/requests/{applicationId}/approve")
+    @Operation(summary = "OB 멘토링 요청 승인", description = "대기 중인 멘토링 요청을 승인합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "승인 성공"),
+            @ApiResponse(responseCode = "400", description = "승인 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> approveOBMentoringRequest(@PathVariable Long applicationId) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.approveOBMentoringRequest(userId, applicationId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @GetMapping("/ob/reviews")
+    @Operation(summary = "OB 받은 후기 조회", description = "로그인한 OB 사용자의 받은 후기 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<MentoringReviewListResponse>> getOBReceivedReviews(
+            @RequestParam(defaultValue = "0") int page) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.getOBReceivedReviews(userId, page)));
     }
 
     @DeleteMapping("/account")

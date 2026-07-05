@@ -1,6 +1,7 @@
 package com.kusitms.website.domain.mentoring.dto.response;
 
 import com.kusitms.website.domain.mentoring.entity.MentoringReview;
+import com.kusitms.website.domain.mentoring.entity.RecommendationType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,6 +29,9 @@ public class MentoringReviewDetailResponse {
     @Schema(description = "선택된 키워드 목록")
     private List<String> keywords;
 
+    @Schema(description = "추천 여부")
+    private RecommendationType recommendationType;
+
     @Schema(description = "작성일")
     private LocalDateTime createdAt;
 
@@ -42,6 +46,7 @@ public class MentoringReviewDetailResponse {
                 .reviewerCardinal(review.getReviewer().getCardinal())
                 .content(review.getContent())
                 .keywords(keywordNames)
+                .recommendationType(review.getRecommendationType())
                 .createdAt(review.getCreatedAt())
                 .build();
     }

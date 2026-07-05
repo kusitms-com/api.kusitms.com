@@ -30,6 +30,9 @@ public class MentoringApplication {
     @Column(length = 500)
     private String message;
 
+    @Column(length = 300)
+    private String rejectionReason;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ApplicationStatus status;
@@ -48,5 +51,18 @@ public class MentoringApplication {
 
     public void updateStatus(ApplicationStatus status) {
         this.status = status;
+    }
+
+    public void approve() {
+        this.status = ApplicationStatus.ACTIVE;
+    }
+
+    public void complete() {
+        this.status = ApplicationStatus.COMPLETED;
+    }
+
+    public void reject(String rejectionReason) {
+        this.status = ApplicationStatus.REJECTED;
+        this.rejectionReason = rejectionReason;
     }
 }

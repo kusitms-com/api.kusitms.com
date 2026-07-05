@@ -13,10 +13,20 @@ import java.util.Optional;
 
 public interface MentoringSlotRepository extends JpaRepository<MentoringSlot, Long> {
 
+    boolean existsByMentorMentorIdAndDateGreaterThanEqual(Long mentorId, LocalDate fromDate);
+
+    List<MentoringSlot> findByMentorMentorIdAndDateOrderByStartTimeAsc(Long mentorId, LocalDate date);
+
     List<MentoringSlot> findByMentorMentorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
             Long mentorId, LocalDate fromDate);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM MentoringSlot s WHERE s.slotId = :slotId")
     Optional<MentoringSlot> findByIdWithLock(@Param("slotId") Long slotId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM MentoringSlot s WHERE s.mentor.mentorId = :mentorId AND s.date = :date ORDER BY s.startTime ASC")
+    List<MentoringSlot> findByMentorMentorIdAndDateWithLock(
+            @Param("mentorId") Long mentorId,
+            @Param("date") LocalDate date);
 }
