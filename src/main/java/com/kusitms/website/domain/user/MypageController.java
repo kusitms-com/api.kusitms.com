@@ -4,10 +4,12 @@ import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileVisibilityUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.OBScheduleUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
 import com.kusitms.website.domain.user.dto.response.OBProfileResponse;
+import com.kusitms.website.domain.user.dto.response.OBScheduleResponse;
 import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
 import com.kusitms.website.global.auth.UserPrincipal;
 import com.kusitms.website.global.common.BaseResponse;
@@ -158,6 +160,32 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(new BaseResponse<>(
                 mypageService.updateOBProfileVisibility(userId, request)));
+    }
+
+    @GetMapping("/ob/schedule")
+    @Operation(summary = "OB 가능 시간 조회", description = "로그인한 OB 사용자의 가능 시간 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBScheduleResponse>> getOBSchedule() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(mypageService.getOBSchedule(userId)));
+    }
+
+    @PutMapping("/ob/schedule")
+    @Operation(summary = "OB 가능 시간 저장", description = "로그인한 OB 사용자의 날짜별 가능 시간을 저장합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "저장 성공"),
+            @ApiResponse(responseCode = "400", description = "저장 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBScheduleResponse>> updateOBSchedule(
+            @RequestBody @Valid OBScheduleUpdateRequest request) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.updateOBSchedule(userId, request)));
     }
 
     @DeleteMapping("/account")

@@ -6,6 +6,8 @@ import com.kusitms.website.domain.mentoring.entity.MentoringApplication;
 import com.kusitms.website.domain.mentoring.entity.MentoringReview;
 import com.kusitms.website.domain.mentoring.entity.MentoringReviewKeyword;
 import com.kusitms.website.domain.mentoring.entity.Mentor;
+import com.kusitms.website.domain.mentoring.entity.MentoringSlot;
+import com.kusitms.website.domain.mentoring.entity.SlotType;
 import com.kusitms.website.domain.mentoring.repository.MentorRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringApplicationRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringKeywordRepository;
@@ -16,9 +18,12 @@ import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileVisibilityUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.OBScheduleUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
+import com.kusitms.website.domain.user.dto.response.OBScheduleDateResponse;
+import com.kusitms.website.domain.user.dto.response.OBScheduleResponse;
 import com.kusitms.website.domain.user.dto.response.MyMentoringCardResponse;
 import com.kusitms.website.domain.user.dto.response.OBProfileResponse;
 import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
@@ -30,8 +35,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -62,6 +73,9 @@ public class MypageService {
             Collections.singletonList(ApplicationStatus.ACTIVE);
     private static final List<ApplicationStatus> FINISHED_STATUSES =
             Arrays.asList(ApplicationStatus.COMPLETED, ApplicationStatus.REJECTED);
+    private static final List<ApplicationStatus> OCCUPYING_STATUSES =
+            Arrays.asList(ApplicationStatus.PENDING, ApplicationStatus.ACTIVE);
+    private static final LocalTime SLOT_START_MIN_TIME = LocalTime.of(9, 0);
 
     public YBMypageResponse getYBMypage(Long userId) {
         Member member = getActiveMember(userId);
@@ -161,6 +175,30 @@ public class MypageService {
         return OBProfileResponse.from(member, mentor);
     }
 
+    public OBScheduleResponse getOBSchedule(Long userId) {
+        Mentor mentor = getExistingMentor(userId);
+
+        List<MentoringSlot> slots = mentoringSlotRepository
+                .findByMentorMentorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
+                        mentor.getMentorId(), LocalDate.now());
+
+        Map<Long, Integer> applicantCountMap = getApplicantCountMap(slots);
+        Map<LocalDate, List<MentoringSlot>> slotsByDate = slots.stream()
+                .collect(Collectors.groupingBy(
+                        MentoringSlot::getDate,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        List<OBScheduleDateResponse> schedules = slotsByDate.entrySet().stream()
+                .map(entry -> OBScheduleDateResponse.from(entry.getKey(), entry.getValue(), applicantCountMap))
+                .collect(Collectors.toList());
+
+        return OBScheduleResponse.builder()
+                .schedules(schedules)
+                .build();
+    }
+
     @Transactional
     public OBProfileResponse updateOBProfile(
             Long userId,
@@ -207,13 +245,73 @@ public class MypageService {
     @Transactional
     public OBProfileResponse updateOBProfileVisibility(Long userId, OBProfileVisibilityUpdateRequest request) {
         Member member = getOBMember(userId);
-        Mentor mentor = mentorRepository.findByMemberUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("멘토 프로필을 먼저 작성해 주세요."));
+        Mentor mentor = getExistingMentor(userId);
 
         mentor.updateAcceptingRequests(request.getEnabled());
         mentor.updateVisibility(calculateMentorVisibility(mentor));
 
         return OBProfileResponse.from(member, mentor);
+    }
+
+    @Transactional
+    public OBScheduleResponse updateOBSchedule(Long userId, OBScheduleUpdateRequest request) {
+        Mentor mentor = getExistingMentor(userId);
+
+        validateScheduleRequest(mentor, request);
+
+        LocalDate date = request.getDate();
+        SlotType slotType = request.getGroupMentoring() ? SlotType.ONE_TO_N : SlotType.ONE_TO_ONE;
+        int maxAttendees = request.getGroupMentoring() ? request.getMaxAttendees() : 1;
+
+        List<LocalTime> sortedStartTimes = request.getStartTimes().stream()
+                .sorted()
+                .collect(Collectors.toList());
+
+        List<MentoringSlot> existingSlots = mentoringSlotRepository
+                .findByMentorMentorIdAndDateWithLock(mentor.getMentorId(), date);
+
+        Map<Long, Integer> applicantCountMap = getApplicantCountMap(existingSlots);
+        Map<LocalTime, MentoringSlot> existingSlotMap = existingSlots.stream()
+                .collect(Collectors.toMap(MentoringSlot::getStartTime, slot -> slot));
+        Set<LocalTime> requestedStartTimes = Set.copyOf(sortedStartTimes);
+
+        validateLockedSlots(existingSlots, applicantCountMap, requestedStartTimes, slotType, maxAttendees);
+
+        for (MentoringSlot existingSlot : existingSlots) {
+            if (applicantCountMap.getOrDefault(existingSlot.getSlotId(), 0) > 0) {
+                continue;
+            }
+
+            if (!requestedStartTimes.contains(existingSlot.getStartTime())) {
+                mentoringSlotRepository.delete(existingSlot);
+                continue;
+            }
+
+            existingSlot.updateSchedule(
+                    calculateEndTime(existingSlot.getStartTime(), mentor.getDurationMinutes()),
+                    slotType,
+                    maxAttendees
+            );
+        }
+
+        for (LocalTime startTime : sortedStartTimes) {
+            if (existingSlotMap.containsKey(startTime)) {
+                continue;
+            }
+
+            mentoringSlotRepository.save(MentoringSlot.builder()
+                    .mentor(mentor)
+                    .date(date)
+                    .startTime(startTime)
+                    .endTime(calculateEndTime(startTime, mentor.getDurationMinutes()))
+                    .slotType(slotType)
+                    .maxAttendees(maxAttendees)
+                    .build());
+        }
+
+        mentor.updateVisibility(calculateMentorVisibility(mentor));
+
+        return getOBSchedule(userId);
     }
 
     @Transactional
@@ -289,6 +387,12 @@ public class MypageService {
         return member;
     }
 
+    private Mentor getExistingMentor(Long userId) {
+        getOBMember(userId);
+        return mentorRepository.findByMemberUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("멘토 프로필을 먼저 작성해 주세요."));
+    }
+
     private boolean calculateMentorVisibility(Mentor mentor) {
         if (!mentor.isAcceptingRequests()) {
             return false;
@@ -298,6 +402,89 @@ public class MypageService {
         }
         return mentoringSlotRepository.existsByMentorMentorIdAndDateGreaterThanEqual(
                 mentor.getMentorId(), LocalDate.now());
+    }
+
+    private void validateScheduleRequest(Mentor mentor, OBScheduleUpdateRequest request) {
+        if (mentor.getDurationMinutes() == null) {
+            throw new IllegalArgumentException("멘토링 한타임 시간을 먼저 설정해 주세요.");
+        }
+        if (request.getDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("오늘 이후 날짜만 등록할 수 있습니다.");
+        }
+        if (request.getGroupMentoring() && request.getMaxAttendees() == null) {
+            throw new IllegalArgumentException("소그룹 멘토링 최대 인원을 선택해 주세요.");
+        }
+
+        long distinctStartTimeCount = request.getStartTimes().stream().distinct().count();
+        if (distinctStartTimeCount != request.getStartTimes().size()) {
+            throw new IllegalArgumentException("중복된 시간 슬롯은 등록할 수 없습니다.");
+        }
+
+        for (LocalTime startTime : request.getStartTimes()) {
+            validateStartTime(startTime, mentor.getDurationMinutes());
+        }
+    }
+
+    private void validateStartTime(LocalTime startTime, int durationMinutes) {
+        if (startTime.isBefore(SLOT_START_MIN_TIME)) {
+            throw new IllegalArgumentException("시간 슬롯은 오전 9시 이후부터 등록할 수 있습니다.");
+        }
+        if (startTime.getMinute() % 10 != 0) {
+            throw new IllegalArgumentException("시간 슬롯은 10분 단위로만 등록할 수 있습니다.");
+        }
+
+        int startMinutes = startTime.getHour() * 60 + startTime.getMinute();
+        if (startMinutes + durationMinutes > 24 * 60) {
+            throw new IllegalArgumentException("자정을 넘는 시간 슬롯은 등록할 수 없습니다.");
+        }
+    }
+
+    private void validateLockedSlots(
+            List<MentoringSlot> existingSlots,
+            Map<Long, Integer> applicantCountMap,
+            Set<LocalTime> requestedStartTimes,
+            SlotType slotType,
+            int maxAttendees
+    ) {
+        boolean hasLockedSlot = existingSlots.stream()
+                .anyMatch(slot -> applicantCountMap.getOrDefault(slot.getSlotId(), 0) > 0);
+
+        if (!hasLockedSlot) {
+            return;
+        }
+
+        for (MentoringSlot slot : existingSlots) {
+            if (applicantCountMap.getOrDefault(slot.getSlotId(), 0) == 0) {
+                continue;
+            }
+            if (!requestedStartTimes.contains(slot.getStartTime())) {
+                throw new IllegalArgumentException("신청된 시간 슬롯은 삭제할 수 없습니다.");
+            }
+            if (slot.getSlotType() != slotType
+                    || (slotType == SlotType.ONE_TO_N && slot.getMaxAttendees() != maxAttendees)) {
+                throw new IllegalArgumentException("해당 날짜에 이미 신청한 멘티가 있어 변경할 수 없습니다.");
+            }
+        }
+    }
+
+    private Map<Long, Integer> getApplicantCountMap(List<MentoringSlot> slots) {
+        if (slots.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Long> slotIds = slots.stream()
+                .map(MentoringSlot::getSlotId)
+                .collect(Collectors.toList());
+
+        Map<Long, Integer> applicantCountMap = new HashMap<>();
+        mentoringApplicationRepository.countBySlotIdsAndStatusIn(slotIds, OCCUPYING_STATUSES)
+                .forEach(row -> applicantCountMap.put((Long) row[0], ((Long) row[1]).intValue()));
+
+        return applicantCountMap;
+    }
+
+    private LocalTime calculateEndTime(LocalTime startTime, int durationMinutes) {
+        return startTime.plusMinutes(durationMinutes);
     }
 
     private void validateImageFile(MultipartFile file) {

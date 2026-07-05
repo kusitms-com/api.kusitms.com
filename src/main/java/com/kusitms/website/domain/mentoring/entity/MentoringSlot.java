@@ -48,4 +48,10 @@ public class MentoringSlot {
         this.slotType = slotType;
         this.maxAttendees = maxAttendees;
     }
+
+    public void updateSchedule(LocalTime endTime, SlotType slotType, int maxAttendees) {
+        this.endTime = endTime;
+        this.slotType = slotType;
+        this.maxAttendees = maxAttendees;
+    }
 }

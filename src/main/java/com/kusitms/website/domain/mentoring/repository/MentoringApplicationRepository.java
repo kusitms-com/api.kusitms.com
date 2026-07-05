@@ -16,6 +16,14 @@ public interface MentoringApplicationRepository extends JpaRepository<MentoringA
     int countBySlotIdAndStatusIn(@Param("slotId") Long slotId,
                                  @Param("statuses") List<ApplicationStatus> statuses);
 
+    @Query("SELECT a.slot.slotId, COUNT(a) " +
+            "FROM MentoringApplication a " +
+            "WHERE a.slot.slotId IN :slotIds AND a.status IN :statuses " +
+            "GROUP BY a.slot.slotId")
+    List<Object[]> countBySlotIdsAndStatusIn(
+            @Param("slotIds") List<Long> slotIds,
+            @Param("statuses") List<ApplicationStatus> statuses);
+
     boolean existsBySlotSlotIdAndApplicantUserIdAndStatusIn(
             Long slotId, Long userId, List<ApplicationStatus> statuses);
 
