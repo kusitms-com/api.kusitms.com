@@ -39,11 +39,15 @@ public class Mentor {
     @Column(nullable = false)
     private MentoringMethod method;
 
+    private Integer durationMinutes;
+
     @Column(nullable = false)
     private Integer pricePerHour;
 
     @Column(columnDefinition = "TEXT")
     private String introduction;
+
+    private boolean acceptingRequests;
 
     private boolean active;
 
@@ -52,18 +56,54 @@ public class Mentor {
     @Builder
     public Mentor(Member member, String title, String profileImageUrl,
                   MentoringCategory category, String experience,
-                  MentoringMethod method, Integer pricePerHour,
-                  String introduction, boolean active) {
+                  MentoringMethod method, Integer durationMinutes, Integer pricePerHour,
+                  String introduction, boolean acceptingRequests, boolean active) {
         this.member = member;
         this.title = title;
         this.profileImageUrl = profileImageUrl;
         this.category = category;
         this.experience = experience;
         this.method = method;
+        this.durationMinutes = durationMinutes;
         this.pricePerHour = pricePerHour;
         this.introduction = introduction;
+        this.acceptingRequests = acceptingRequests;
         this.active = active;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public void updateProfile(String title, String profileImageUrl, MentoringCategory category,
+                              String experience, MentoringMethod method, Integer durationMinutes,
+                              Integer pricePerHour, String introduction) {
+        this.title = title;
+        if (profileImageUrl != null) {
+            this.profileImageUrl = profileImageUrl;
+        }
+        this.category = category;
+        this.experience = experience;
+        this.method = method;
+        this.durationMinutes = durationMinutes;
+        this.pricePerHour = pricePerHour;
+        this.introduction = introduction;
+    }
+
+    public void updateAcceptingRequests(boolean acceptingRequests) {
+        this.acceptingRequests = acceptingRequests;
+    }
+
+    public void updateVisibility(boolean visible) {
+        this.active = visible;
+    }
+
+    public boolean isProfileCompleted() {
+        return profileImageUrl != null && !profileImageUrl.isBlank()
+                && title != null && !title.isBlank()
+                && experience != null && !experience.isBlank()
+                && introduction != null && !introduction.isBlank()
+                && category != null
+                && method != null
+                && durationMinutes != null
+                && pricePerHour != null;
     }
 
     public void deactivate() {

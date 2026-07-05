@@ -5,17 +5,22 @@ import com.kusitms.website.domain.mentoring.entity.MentoringKeyword;
 import com.kusitms.website.domain.mentoring.entity.MentoringApplication;
 import com.kusitms.website.domain.mentoring.entity.MentoringReview;
 import com.kusitms.website.domain.mentoring.entity.MentoringReviewKeyword;
+import com.kusitms.website.domain.mentoring.entity.Mentor;
 import com.kusitms.website.domain.mentoring.repository.MentorRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringApplicationRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringKeywordRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringReviewRepository;
+import com.kusitms.website.domain.mentoring.repository.MentoringSlotRepository;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
+import com.kusitms.website.domain.user.dto.request.OBProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.OBProfileVisibilityUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
 import com.kusitms.website.domain.user.dto.response.MyMentoringCardResponse;
+import com.kusitms.website.domain.user.dto.response.OBProfileResponse;
 import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -25,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -46,6 +52,7 @@ public class MypageService {
     private final MentoringKeywordRepository mentoringKeywordRepository;
     private final MentoringReviewRepository mentoringReviewRepository;
     private final MentorRepository mentorRepository;
+    private final MentoringSlotRepository mentoringSlotRepository;
     private final S3Service s3Service;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
@@ -148,6 +155,67 @@ public class MypageService {
         return AccountProfileResponse.from(member);
     }
 
+    public OBProfileResponse getOBProfile(Long userId) {
+        Member member = getOBMember(userId);
+        Mentor mentor = mentorRepository.findByMemberUserId(userId).orElse(null);
+        return OBProfileResponse.from(member, mentor);
+    }
+
+    @Transactional
+    public OBProfileResponse updateOBProfile(
+            Long userId,
+            OBProfileUpdateRequest request,
+            MultipartFile mentorProfileImage
+    ) {
+        Member member = getOBMember(userId);
+        Mentor mentor = mentorRepository.findByMemberUserId(userId)
+                .orElseGet(() -> mentorRepository.save(Mentor.builder()
+                        .member(member)
+                        .title(request.getTitle())
+                        .profileImageUrl(null)
+                        .category(request.getCategory())
+                        .experience(request.getExperience())
+                        .method(request.getMethod())
+                        .durationMinutes(request.getDurationMinutes())
+                        .pricePerHour(request.getPricePerHour())
+                        .introduction(request.getIntroduction())
+                        .acceptingRequests(false)
+                        .active(false)
+                        .build()));
+
+        String mentorProfileImageUrl = null;
+        if (mentorProfileImage != null && !mentorProfileImage.isEmpty()) {
+            validateImageFile(mentorProfileImage);
+            mentorProfileImageUrl = s3Service.uploadFile(mentorProfileImage, "mentor-profile");
+        }
+
+        mentor.updateProfile(
+                request.getTitle(),
+                mentorProfileImageUrl,
+                request.getCategory(),
+                request.getExperience(),
+                request.getMethod(),
+                request.getDurationMinutes(),
+                request.getPricePerHour(),
+                request.getIntroduction()
+        );
+        mentor.updateVisibility(calculateMentorVisibility(mentor));
+
+        return OBProfileResponse.from(member, mentor);
+    }
+
+    @Transactional
+    public OBProfileResponse updateOBProfileVisibility(Long userId, OBProfileVisibilityUpdateRequest request) {
+        Member member = getOBMember(userId);
+        Mentor mentor = mentorRepository.findByMemberUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("멘토 프로필을 먼저 작성해 주세요."));
+
+        mentor.updateAcceptingRequests(request.getEnabled());
+        mentor.updateVisibility(calculateMentorVisibility(mentor));
+
+        return OBProfileResponse.from(member, mentor);
+    }
+
     @Transactional
     public AccountProfileResponse updateAccountProfile(
             Long userId,
@@ -211,6 +279,25 @@ public class MypageService {
             throw new IllegalArgumentException("이미 탈퇴한 계정입니다.");
         }
         return member;
+    }
+
+    private Member getOBMember(Long userId) {
+        Member member = getActiveMember(userId);
+        if (member.getRole() != MemberRole.OB) {
+            throw new IllegalArgumentException("OB 회원만 접근할 수 있습니다.");
+        }
+        return member;
+    }
+
+    private boolean calculateMentorVisibility(Mentor mentor) {
+        if (!mentor.isAcceptingRequests()) {
+            return false;
+        }
+        if (!mentor.isProfileCompleted()) {
+            return false;
+        }
+        return mentoringSlotRepository.existsByMentorMentorIdAndDateGreaterThanEqual(
+                mentor.getMentorId(), LocalDate.now());
     }
 
     private void validateImageFile(MultipartFile file) {

@@ -13,6 +13,8 @@ import java.util.Optional;
 
 public interface MentoringSlotRepository extends JpaRepository<MentoringSlot, Long> {
 
+    boolean existsByMentorMentorIdAndDateGreaterThanEqual(Long mentorId, LocalDate fromDate);
+
     List<MentoringSlot> findByMentorMentorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
             Long mentorId, LocalDate fromDate);
 
