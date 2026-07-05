@@ -29,8 +29,16 @@ public class MentoringReview {
     @JoinColumn(name = "user_id", nullable = false)
     private Member reviewer;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application_id", nullable = false, unique = true)
+    private MentoringApplication application;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecommendationType recommendationType;
 
     private LocalDateTime createdAt;
 
@@ -38,10 +46,13 @@ public class MentoringReview {
     private List<MentoringReviewKeyword> keywords = new ArrayList<>();
 
     @Builder
-    public MentoringReview(Mentor mentor, Member reviewer, String content) {
+    public MentoringReview(Mentor mentor, Member reviewer, MentoringApplication application,
+                           String content, RecommendationType recommendationType) {
         this.mentor = mentor;
         this.reviewer = reviewer;
+        this.application = application;
         this.content = content;
+        this.recommendationType = recommendationType;
         this.createdAt = LocalDateTime.now();
     }
 

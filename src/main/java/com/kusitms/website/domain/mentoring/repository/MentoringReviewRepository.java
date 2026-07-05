@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface MentoringReviewRepository extends JpaRepository<MentoringReview, Long> {
 
     Page<MentoringReview> findByMentorMentorIdOrderByCreatedAtDesc(Long mentorId, Pageable pageable);
+
+    boolean existsByApplicationApplicationId(Long applicationId);
 }

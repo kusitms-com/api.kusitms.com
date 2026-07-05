@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MentoringApplicationRepository extends JpaRepository<MentoringApplication, Long> {
 
@@ -34,4 +35,12 @@ public interface MentoringApplicationRepository extends JpaRepository<MentoringA
     boolean existsByUserIdAndStatus(
             @Param("userId") Long userId,
             @Param("status") ApplicationStatus status);
+
+    Optional<MentoringApplication> findByApplicationIdAndApplicantUserId(Long applicationId, Long userId);
+
+    List<MentoringApplication> findByApplicantUserIdAndStatusInOrderByCreatedAtDesc(
+            Long userId, List<ApplicationStatus> statuses);
+
+    List<MentoringApplication> findBySlotMentorMemberUserIdAndStatusInOrderByCreatedAtDesc(
+            Long userId, List<ApplicationStatus> statuses);
 }
