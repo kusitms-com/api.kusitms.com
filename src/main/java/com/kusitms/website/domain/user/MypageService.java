@@ -1,12 +1,17 @@
 package com.kusitms.website.domain.user;
 
 import com.kusitms.website.domain.mentoring.entity.ApplicationStatus;
+import com.kusitms.website.domain.mentoring.entity.MentoringKeyword;
 import com.kusitms.website.domain.mentoring.entity.MentoringApplication;
+import com.kusitms.website.domain.mentoring.entity.MentoringReview;
+import com.kusitms.website.domain.mentoring.entity.MentoringReviewKeyword;
 import com.kusitms.website.domain.mentoring.repository.MentorRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringApplicationRepository;
+import com.kusitms.website.domain.mentoring.repository.MentoringKeywordRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringReviewRepository;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
@@ -38,6 +43,7 @@ public class MypageService {
 
     private final MemberRepository memberRepository;
     private final MentoringApplicationRepository mentoringApplicationRepository;
+    private final MentoringKeywordRepository mentoringKeywordRepository;
     private final MentoringReviewRepository mentoringReviewRepository;
     private final MentorRepository mentorRepository;
     private final S3Service s3Service;
@@ -96,6 +102,45 @@ public class MypageService {
                 application.getApplicationId(),
                 application.getRejectionReason()
         );
+    }
+
+    @Transactional
+    public void createMentoringReview(Long userId, MentoringReviewCreateRequest request) {
+        MentoringApplication application = mentoringApplicationRepository
+                .findByApplicationIdAndApplicantUserId(request.getApplicationId(), userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 멘토링 신청입니다."));
+
+        if (application.getStatus() != ApplicationStatus.COMPLETED) {
+            throw new IllegalArgumentException("완료된 멘토링에 한해서만 후기를 작성할 수 있습니다.");
+        }
+        if (mentoringReviewRepository.existsByApplicationApplicationId(application.getApplicationId())) {
+            throw new IllegalArgumentException("이미 후기가 작성된 멘토링입니다.");
+        }
+
+        List<Long> keywordIds = request.getKeywordIds();
+        long distinctKeywordCount = keywordIds.stream().distinct().count();
+        if (distinctKeywordCount != keywordIds.size()) {
+            throw new IllegalArgumentException("중복된 키워드는 선택할 수 없습니다.");
+        }
+
+        List<MentoringKeyword> keywords = mentoringKeywordRepository.findByKeywordIdIn(keywordIds);
+        if (keywords.size() != keywordIds.size()) {
+            throw new IllegalArgumentException("유효하지 않은 키워드가 포함되어 있습니다.");
+        }
+
+        MentoringReview review = MentoringReview.builder()
+                .mentor(application.getSlot().getMentor())
+                .reviewer(application.getApplicant())
+                .application(application)
+                .content(request.getContent())
+                .recommendationType(request.getRecommendationType())
+                .build();
+
+        for (MentoringKeyword keyword : keywords) {
+            review.addKeyword(new MentoringReviewKeyword(review, keyword));
+        }
+
+        mentoringReviewRepository.save(review);
     }
 
     public AccountProfileResponse getAccountProfile(Long userId) {

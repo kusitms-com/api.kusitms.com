@@ -1,6 +1,7 @@
 package com.kusitms.website.domain.user;
 
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
@@ -20,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -98,6 +100,20 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(new BaseResponse<>(
                 mypageService.getApplicationRejectionReason(userId, applicationId)));
+    }
+
+    @PostMapping("/reviews")
+    @Operation(summary = "멘토링 후기 작성", description = "완료된 멘토링에 대한 후기를 작성합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "작성 성공"),
+            @ApiResponse(responseCode = "400", description = "작성 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> createMentoringReview(
+            @RequestBody @Valid MentoringReviewCreateRequest request) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.createMentoringReview(userId, request);
+        return ResponseEntity.ok(new BaseResponse());
     }
 
     @DeleteMapping("/account")
