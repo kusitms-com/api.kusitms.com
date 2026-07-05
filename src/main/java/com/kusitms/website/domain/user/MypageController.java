@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.user;
 
+import com.kusitms.website.domain.mentoring.dto.response.MentoringReviewListResponse;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.ApplicationRejectRequest;
 import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
@@ -218,6 +219,33 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         mypageService.rejectOBMentoringRequest(userId, applicationId, request);
         return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @PostMapping("/ob/requests/{applicationId}/approve")
+    @Operation(summary = "OB 멘토링 요청 승인", description = "대기 중인 멘토링 요청을 승인합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "승인 성공"),
+            @ApiResponse(responseCode = "400", description = "승인 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> approveOBMentoringRequest(@PathVariable Long applicationId) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.approveOBMentoringRequest(userId, applicationId);
+        return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @GetMapping("/ob/reviews")
+    @Operation(summary = "OB 받은 후기 조회", description = "로그인한 OB 사용자의 받은 후기 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<MentoringReviewListResponse>> getOBReceivedReviews(
+            @RequestParam(defaultValue = "0") int page) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.getOBReceivedReviews(userId, page)));
     }
 
     @DeleteMapping("/account")

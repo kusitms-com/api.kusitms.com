@@ -49,6 +49,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import com.kusitms.website.domain.mentoring.dto.response.MentoringReviewListResponse;
+import com.kusitms.website.domain.mentoring.dto.response.MentoringReviewDetailResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -240,6 +242,15 @@ public class MypageService {
                 .build();
     }
 
+    public MentoringReviewListResponse getOBReceivedReviews(Long userId, int page) {
+        Mentor mentor = getExistingMentor(userId);
+
+        Page<MentoringReview> reviewPage = mentoringReviewRepository
+                .findByMentorMentorIdOrderByCreatedAtDesc(mentor.getMentorId(), PageRequest.of(page, 10));
+
+        return buildMentoringReviewListResponse(reviewPage);
+    }
+
     @Transactional
     public OBProfileResponse updateOBProfile(
             Long userId,
@@ -369,6 +380,33 @@ public class MypageService {
     }
 
     @Transactional
+    public void approveOBMentoringRequest(Long userId, Long applicationId) {
+        MentoringApplication application = mentoringApplicationRepository
+                .findByApplicationIdAndSlotMentorMemberUserId(applicationId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 멘토링 신청입니다."));
+
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new IllegalArgumentException("대기 중인 멘토링 신청만 승인할 수 있습니다.");
+        }
+
+        MentoringSlot slot = mentoringSlotRepository.findByIdWithLock(application.getSlot().getSlotId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 슬롯입니다."));
+
+        int currentApplicants = mentoringApplicationRepository.countBySlotIdAndStatusIn(
+                slot.getSlotId(), OCCUPYING_STATUSES);
+
+        if (slot.getSlotType() == SlotType.ONE_TO_ONE && currentApplicants >= 1) {
+            throw new IllegalArgumentException("해당 시간대는 이미 예약되었습니다.");
+        }
+        if (slot.getSlotType() == SlotType.ONE_TO_N && currentApplicants >= slot.getMaxAttendees()) {
+            throw new IllegalArgumentException("해당 시간대의 최대 인원에 도달했습니다.");
+        }
+
+        application.approve();
+        slot.getMentor().updateVisibility(calculateMentorVisibility(slot.getMentor()));
+    }
+
+    @Transactional
     public AccountProfileResponse updateAccountProfile(
             Long userId,
             AccountProfileUpdateRequest request,
@@ -454,8 +492,7 @@ public class MypageService {
         if (!mentor.isProfileCompleted()) {
             return false;
         }
-        return mentoringSlotRepository.existsByMentorMentorIdAndDateGreaterThanEqual(
-                mentor.getMentorId(), LocalDate.now());
+        return hasAvailableFutureSlot(mentor);
     }
 
     private void validateScheduleRequest(Mentor mentor, OBScheduleUpdateRequest request) {
@@ -537,8 +574,41 @@ public class MypageService {
         return applicantCountMap;
     }
 
+    private boolean hasAvailableFutureSlot(Mentor mentor) {
+        List<MentoringSlot> futureSlots = mentoringSlotRepository
+                .findByMentorMentorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
+                        mentor.getMentorId(), LocalDate.now());
+
+        if (futureSlots.isEmpty()) {
+            return false;
+        }
+
+        Map<Long, Integer> applicantCountMap = getApplicantCountMap(futureSlots);
+
+        return futureSlots.stream().anyMatch(slot -> {
+            int currentApplicants = applicantCountMap.getOrDefault(slot.getSlotId(), 0);
+            if (slot.getSlotType() == SlotType.ONE_TO_ONE) {
+                return currentApplicants < 1;
+            }
+            return currentApplicants < slot.getMaxAttendees();
+        });
+    }
+
     private LocalTime calculateEndTime(LocalTime startTime, int durationMinutes) {
         return startTime.plusMinutes(durationMinutes);
+    }
+
+    private MentoringReviewListResponse buildMentoringReviewListResponse(Page<MentoringReview> reviewPage) {
+        List<MentoringReviewDetailResponse> reviews = reviewPage.getContent().stream()
+                .map(MentoringReviewDetailResponse::from)
+                .collect(Collectors.toList());
+
+        return MentoringReviewListResponse.builder()
+                .totalCount(reviewPage.getTotalElements())
+                .totalPages(reviewPage.getTotalPages())
+                .currentPage(reviewPage.getNumber())
+                .reviews(reviews)
+                .build();
     }
 
     private void validateImageFile(MultipartFile file) {
