@@ -15,6 +15,7 @@ import com.kusitms.website.domain.mentoring.repository.MentoringReviewRepository
 import com.kusitms.website.domain.mentoring.repository.MentoringSlotRepository;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.ApplicationRejectRequest;
 import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileVisibilityUpdateRequest;
@@ -22,12 +23,16 @@ import com.kusitms.website.domain.user.dto.request.OBScheduleUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
+import com.kusitms.website.domain.user.dto.response.OBMentoringRequestCardResponse;
+import com.kusitms.website.domain.user.dto.response.OBMentoringRequestsResponse;
 import com.kusitms.website.domain.user.dto.response.OBScheduleDateResponse;
 import com.kusitms.website.domain.user.dto.response.OBScheduleResponse;
 import com.kusitms.website.domain.user.dto.response.MyMentoringCardResponse;
 import com.kusitms.website.domain.user.dto.response.OBProfileResponse;
 import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +40,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -199,6 +203,43 @@ public class MypageService {
                 .build();
     }
 
+    public OBMentoringRequestsResponse getOBMentoringRequests(Long userId, int page) {
+        getExistingMentor(userId);
+
+        Page<MentoringApplication> requestPage = mentoringApplicationRepository
+                .findBySlotMentorMemberUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, 10));
+
+        List<OBMentoringRequestCardResponse> pendingRequests = requestPage.getContent().stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.PENDING)
+                .map(OBMentoringRequestCardResponse::from)
+                .collect(Collectors.toList());
+
+        List<OBMentoringRequestCardResponse> activeRequests = requestPage.getContent().stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.ACTIVE)
+                .map(OBMentoringRequestCardResponse::from)
+                .collect(Collectors.toList());
+
+        List<OBMentoringRequestCardResponse> completedRequests = requestPage.getContent().stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.COMPLETED)
+                .map(OBMentoringRequestCardResponse::from)
+                .collect(Collectors.toList());
+
+        List<OBMentoringRequestCardResponse> rejectedRequests = requestPage.getContent().stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.REJECTED)
+                .map(OBMentoringRequestCardResponse::from)
+                .collect(Collectors.toList());
+
+        return OBMentoringRequestsResponse.builder()
+                .totalCount(requestPage.getTotalElements())
+                .totalPages(requestPage.getTotalPages())
+                .currentPage(requestPage.getNumber())
+                .pendingRequests(pendingRequests)
+                .activeRequests(activeRequests)
+                .completedRequests(completedRequests)
+                .rejectedRequests(rejectedRequests)
+                .build();
+    }
+
     @Transactional
     public OBProfileResponse updateOBProfile(
             Long userId,
@@ -312,6 +353,19 @@ public class MypageService {
         mentor.updateVisibility(calculateMentorVisibility(mentor));
 
         return getOBSchedule(userId);
+    }
+
+    @Transactional
+    public void rejectOBMentoringRequest(Long userId, Long applicationId, ApplicationRejectRequest request) {
+        MentoringApplication application = mentoringApplicationRepository
+                .findByApplicationIdAndSlotMentorMemberUserId(applicationId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 멘토링 신청입니다."));
+
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new IllegalArgumentException("대기 중인 멘토링 신청만 거절할 수 있습니다.");
+        }
+
+        application.reject(request.getRejectionReason().trim());
     }
 
     @Transactional

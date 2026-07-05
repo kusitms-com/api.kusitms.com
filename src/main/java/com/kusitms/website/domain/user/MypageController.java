@@ -1,6 +1,7 @@
 package com.kusitms.website.domain.user;
 
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
+import com.kusitms.website.domain.user.dto.request.ApplicationRejectRequest;
 import com.kusitms.website.domain.user.dto.request.MentoringReviewCreateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.OBProfileVisibilityUpdateRequest;
@@ -8,6 +9,7 @@ import com.kusitms.website.domain.user.dto.request.OBScheduleUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
 import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
+import com.kusitms.website.domain.user.dto.response.OBMentoringRequestsResponse;
 import com.kusitms.website.domain.user.dto.response.OBProfileResponse;
 import com.kusitms.website.domain.user.dto.response.OBScheduleResponse;
 import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -186,6 +189,35 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(new BaseResponse<>(
                 mypageService.updateOBSchedule(userId, request)));
+    }
+
+    @GetMapping("/ob/requests")
+    @Operation(summary = "OB 멘토링 요청 목록 조회", description = "로그인한 OB 사용자의 멘토링 요청 목록을 상태별로 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<OBMentoringRequestsResponse>> getOBMentoringRequests(
+            @RequestParam(defaultValue = "0") int page) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.getOBMentoringRequests(userId, page)));
+    }
+
+    @PostMapping("/ob/requests/{applicationId}/reject")
+    @Operation(summary = "OB 멘토링 요청 거절", description = "대기 중인 멘토링 요청을 거절하고 사유를 저장합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "거절 성공"),
+            @ApiResponse(responseCode = "400", description = "거절 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse> rejectOBMentoringRequest(
+            @PathVariable Long applicationId,
+            @RequestBody @Valid ApplicationRejectRequest request) {
+        Long userId = getAuthenticatedUserId();
+        mypageService.rejectOBMentoringRequest(userId, applicationId, request);
+        return ResponseEntity.ok(new BaseResponse());
     }
 
     @DeleteMapping("/account")

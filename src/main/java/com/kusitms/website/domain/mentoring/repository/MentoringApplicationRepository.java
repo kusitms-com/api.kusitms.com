@@ -2,6 +2,8 @@ package com.kusitms.website.domain.mentoring.repository;
 
 import com.kusitms.website.domain.mentoring.entity.ApplicationStatus;
 import com.kusitms.website.domain.mentoring.entity.MentoringApplication;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
@@ -55,4 +57,10 @@ public interface MentoringApplicationRepository extends JpaRepository<MentoringA
     @EntityGraph(attributePaths = {"slot", "slot.mentor", "slot.mentor.member", "applicant"})
     List<MentoringApplication> findBySlotMentorMemberUserIdAndStatusInOrderByCreatedAtDesc(
             Long userId, List<ApplicationStatus> statuses);
+
+    @EntityGraph(attributePaths = {"slot", "slot.mentor", "slot.mentor.member", "applicant"})
+    Page<MentoringApplication> findBySlotMentorMemberUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"slot", "slot.mentor", "slot.mentor.member", "applicant"})
+    Optional<MentoringApplication> findByApplicationIdAndSlotMentorMemberUserId(Long applicationId, Long userId);
 }
