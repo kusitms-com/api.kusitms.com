@@ -4,7 +4,6 @@ import lombok.Getter;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,6 +22,5 @@ public class OBScheduleUpdateRequest {
     @Max(value = 5, message = "최대 인원은 5명 이하여야 합니다.")
     private Integer maxAttendees;
 
-    @NotEmpty(message = "최소 1개 이상의 시간 슬롯을 선택해 주세요.")
     private List<LocalTime> startTimes;
 }

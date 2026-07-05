@@ -98,13 +98,24 @@ public class MypageService {
                 .map(application -> MyMentoringCardResponse.from(application, false))
                 .collect(Collectors.toList());
 
-        List<MyMentoringCardResponse> completedMentorings = mentoringApplicationRepository
-                .findByApplicantUserIdAndStatusInOrderByCreatedAtDesc(userId, FINISHED_STATUSES)
+        List<MentoringApplication> finishedApplications = mentoringApplicationRepository
+                .findByApplicantUserIdAndStatusInOrderByCreatedAtDesc(userId, FINISHED_STATUSES);
+
+        List<Long> completedApplicationIds = finishedApplications.stream()
+                .filter(application -> application.getStatus() == ApplicationStatus.COMPLETED)
+                .map(MentoringApplication::getApplicationId)
+                .collect(Collectors.toList());
+
+        Set<Long> reviewedApplicationIds = mentoringReviewRepository.findByApplicationApplicationIdIn(completedApplicationIds)
                 .stream()
+                .map(review -> review.getApplication().getApplicationId())
+                .collect(Collectors.toSet());
+
+        List<MyMentoringCardResponse> completedMentorings = finishedApplications.stream()
                 .map(application -> MyMentoringCardResponse.from(
                         application,
                         application.getStatus() == ApplicationStatus.COMPLETED
-                                && !mentoringReviewRepository.existsByApplicationApplicationId(application.getApplicationId())
+                                && !reviewedApplicationIds.contains(application.getApplicationId())
                 ))
                 .collect(Collectors.toList());
 
@@ -315,7 +326,9 @@ public class MypageService {
         SlotType slotType = request.getGroupMentoring() ? SlotType.ONE_TO_N : SlotType.ONE_TO_ONE;
         int maxAttendees = request.getGroupMentoring() ? request.getMaxAttendees() : 1;
 
-        List<LocalTime> sortedStartTimes = request.getStartTimes().stream()
+        List<LocalTime> requestStartTimes = request.getStartTimes() == null ? Collections.emptyList() : request.getStartTimes();
+
+        List<LocalTime> sortedStartTimes = requestStartTimes.stream()
                 .sorted()
                 .collect(Collectors.toList());
 
@@ -394,11 +407,12 @@ public class MypageService {
 
         int currentApplicants = mentoringApplicationRepository.countBySlotIdAndStatusIn(
                 slot.getSlotId(), OCCUPYING_STATUSES);
+        int otherApplicants = currentApplicants - 1;
 
-        if (slot.getSlotType() == SlotType.ONE_TO_ONE && currentApplicants >= 1) {
+        if (slot.getSlotType() == SlotType.ONE_TO_ONE && otherApplicants >= 1) {
             throw new IllegalArgumentException("해당 시간대는 이미 예약되었습니다.");
         }
-        if (slot.getSlotType() == SlotType.ONE_TO_N && currentApplicants >= slot.getMaxAttendees()) {
+        if (slot.getSlotType() == SlotType.ONE_TO_N && otherApplicants >= slot.getMaxAttendees()) {
             throw new IllegalArgumentException("해당 시간대의 최대 인원에 도달했습니다.");
         }
 
@@ -506,12 +520,14 @@ public class MypageService {
             throw new IllegalArgumentException("소그룹 멘토링 최대 인원을 선택해 주세요.");
         }
 
-        long distinctStartTimeCount = request.getStartTimes().stream().distinct().count();
-        if (distinctStartTimeCount != request.getStartTimes().size()) {
+        List<LocalTime> startTimes = request.getStartTimes() == null ? Collections.emptyList() : request.getStartTimes();
+
+        long distinctStartTimeCount = startTimes.stream().distinct().count();
+        if (distinctStartTimeCount != startTimes.size()) {
             throw new IllegalArgumentException("중복된 시간 슬롯은 등록할 수 없습니다.");
         }
 
-        for (LocalTime startTime : request.getStartTimes()) {
+        for (LocalTime startTime : startTimes) {
             validateStartTime(startTime, mentor.getDurationMinutes());
         }
     }
