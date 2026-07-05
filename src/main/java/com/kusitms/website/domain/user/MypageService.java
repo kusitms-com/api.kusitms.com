@@ -1,20 +1,28 @@
 package com.kusitms.website.domain.user;
 
 import com.kusitms.website.domain.mentoring.entity.ApplicationStatus;
+import com.kusitms.website.domain.mentoring.entity.MentoringApplication;
 import com.kusitms.website.domain.mentoring.repository.MentorRepository;
 import com.kusitms.website.domain.mentoring.repository.MentoringApplicationRepository;
+import com.kusitms.website.domain.mentoring.repository.MentoringReviewRepository;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
+import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
+import com.kusitms.website.domain.user.dto.response.MyMentoringCardResponse;
+import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +38,65 @@ public class MypageService {
 
     private final MemberRepository memberRepository;
     private final MentoringApplicationRepository mentoringApplicationRepository;
+    private final MentoringReviewRepository mentoringReviewRepository;
     private final MentorRepository mentorRepository;
     private final S3Service s3Service;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    private static final List<ApplicationStatus> PENDING_STATUSES =
+            Collections.singletonList(ApplicationStatus.PENDING);
+    private static final List<ApplicationStatus> ACTIVE_STATUSES =
+            Collections.singletonList(ApplicationStatus.ACTIVE);
+    private static final List<ApplicationStatus> FINISHED_STATUSES =
+            Arrays.asList(ApplicationStatus.COMPLETED, ApplicationStatus.REJECTED);
+
+    public YBMypageResponse getYBMypage(Long userId) {
+        Member member = getActiveMember(userId);
+
+        List<MyMentoringCardResponse> pendingMentorings = mentoringApplicationRepository
+                .findByApplicantUserIdAndStatusInOrderByCreatedAtDesc(userId, PENDING_STATUSES)
+                .stream()
+                .map(application -> MyMentoringCardResponse.from(application, false))
+                .collect(Collectors.toList());
+
+        List<MyMentoringCardResponse> activeMentorings = mentoringApplicationRepository
+                .findByApplicantUserIdAndStatusInOrderByCreatedAtDesc(userId, ACTIVE_STATUSES)
+                .stream()
+                .map(application -> MyMentoringCardResponse.from(application, false))
+                .collect(Collectors.toList());
+
+        List<MyMentoringCardResponse> completedMentorings = mentoringApplicationRepository
+                .findByApplicantUserIdAndStatusInOrderByCreatedAtDesc(userId, FINISHED_STATUSES)
+                .stream()
+                .map(application -> MyMentoringCardResponse.from(
+                        application,
+                        application.getStatus() == ApplicationStatus.COMPLETED
+                                && !mentoringReviewRepository.existsByApplicationApplicationId(application.getApplicationId())
+                ))
+                .collect(Collectors.toList());
+
+        return YBMypageResponse.builder()
+                .profile(AccountProfileResponse.from(member))
+                .pendingMentorings(pendingMentorings)
+                .activeMentorings(activeMentorings)
+                .completedMentorings(completedMentorings)
+                .build();
+    }
+
+    public ApplicationRejectionReasonResponse getApplicationRejectionReason(Long userId, Long applicationId) {
+        MentoringApplication application = mentoringApplicationRepository
+                .findByApplicationIdAndApplicantUserId(applicationId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 멘토링 신청입니다."));
+
+        if (application.getStatus() != ApplicationStatus.REJECTED) {
+            throw new IllegalArgumentException("거절된 멘토링 신청만 조회할 수 있습니다.");
+        }
+
+        return new ApplicationRejectionReasonResponse(
+                application.getApplicationId(),
+                application.getRejectionReason()
+        );
+    }
 
     public AccountProfileResponse getAccountProfile(Long userId) {
         Member member = getActiveMember(userId);

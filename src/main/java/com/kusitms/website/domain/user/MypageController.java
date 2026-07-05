@@ -3,6 +3,8 @@ package com.kusitms.website.domain.user;
 import com.kusitms.website.domain.user.dto.request.AccountProfileUpdateRequest;
 import com.kusitms.website.domain.user.dto.request.PasswordChangeRequest;
 import com.kusitms.website.domain.user.dto.response.AccountProfileResponse;
+import com.kusitms.website.domain.user.dto.response.ApplicationRejectionReasonResponse;
+import com.kusitms.website.domain.user.dto.response.YBMypageResponse;
 import com.kusitms.website.global.auth.UserPrincipal;
 import com.kusitms.website.global.common.BaseResponse;
 import javax.validation.Valid;
@@ -17,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,6 +34,17 @@ import org.springframework.web.multipart.MultipartFile;
 public class MypageController {
 
     private final MypageService mypageService;
+
+    @GetMapping
+    @Operation(summary = "YB 마이페이지 조회", description = "로그인한 YB 사용자의 마이페이지 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<YBMypageResponse>> getYBMypage() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(mypageService.getYBMypage(userId)));
+    }
 
     @GetMapping("/account")
     @Operation(summary = "내 계정 정보 조회", description = "로그인한 사용자의 계정 정보를 조회합니다.")
@@ -70,6 +84,20 @@ public class MypageController {
         Long userId = getAuthenticatedUserId();
         mypageService.changePassword(userId, request);
         return ResponseEntity.ok(new BaseResponse());
+    }
+
+    @GetMapping("/applications/{applicationId}/rejection-reason")
+    @Operation(summary = "거절 사유 조회", description = "로그인한 사용자의 거절된 멘토링 신청 사유를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 불가"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+    })
+    public ResponseEntity<BaseResponse<ApplicationRejectionReasonResponse>> getApplicationRejectionReason(
+            @PathVariable Long applicationId) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(
+                mypageService.getApplicationRejectionReason(userId, applicationId)));
     }
 
     @DeleteMapping("/account")
