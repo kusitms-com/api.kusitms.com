@@ -1,8 +1,10 @@
 package com.kusitms.website.domain.chat;
 
 import com.kusitms.website.domain.chat.dto.request.ChatMessageSendRequest;
+import com.kusitms.website.domain.chat.dto.response.ChatCloseRequestResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageSliceResponse;
+import com.kusitms.website.domain.chat.dto.response.ChatReadResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomDetailResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomListResponse;
 import com.kusitms.website.domain.chat.service.ChatService;
@@ -82,6 +84,30 @@ public class ChatController {
             @RequestBody @Valid ChatMessageSendRequest request) {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(new BaseResponse<>(chatService.sendMessage(userId, roomId, request)));
+    }
+
+    @PostMapping("/rooms/{roomId}/read")
+    @Operation(summary = "채팅 읽음 처리", description = "로그인한 사용자가 채팅방의 미읽음 메시지를 모두 읽음 처리합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "처리 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "400", description = "처리 불가"),
+    })
+    public ResponseEntity<BaseResponse<ChatReadResponse>> markMessagesAsRead(@PathVariable Long roomId) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(chatService.markMessagesAsRead(userId, roomId)));
+    }
+
+    @PostMapping("/rooms/{roomId}/close-request")
+    @Operation(summary = "채팅 종료 요청", description = "로그인한 사용자가 채팅 종료를 요청합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "요청 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "400", description = "요청 불가"),
+    })
+    public ResponseEntity<BaseResponse<ChatCloseRequestResponse>> requestCloseChatRoom(@PathVariable Long roomId) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(new BaseResponse<>(chatService.requestCloseChatRoom(userId, roomId)));
     }
 
     private Long getAuthenticatedUserId() {

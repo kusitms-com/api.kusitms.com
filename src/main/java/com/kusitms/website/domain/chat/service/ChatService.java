@@ -2,7 +2,9 @@ package com.kusitms.website.domain.chat.service;
 
 import com.kusitms.website.domain.chat.dto.request.ChatMessageSendRequest;
 import com.kusitms.website.domain.chat.dto.response.ChatCloseActionStatus;
+import com.kusitms.website.domain.chat.dto.response.ChatCloseRequestResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageResponse;
+import com.kusitms.website.domain.chat.dto.response.ChatReadResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageSliceResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomDetailResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomListItemResponse;
@@ -126,17 +128,52 @@ public class ChatService {
         return ChatMessageResponse.from(message, userId);
     }
 
+    @Transactional
+    public ChatReadResponse markMessagesAsRead(Long userId, Long roomId) {
+        ChatRoom room = getParticipatingRoom(userId, roomId);
+        int updatedCount = chatMessageRepository.markAllAsRead(room.getChatRoomId(), userId);
+        return new ChatReadResponse(room.getChatRoomId(), updatedCount);
+    }
+
+    @Transactional
+    public ChatCloseRequestResponse requestCloseChatRoom(Long userId, Long roomId) {
+        ChatRoom room = getParticipatingRoomWithLock(userId, roomId);
+
+        if (room.getStatus() == ChatRoomStatus.READ_ONLY) {
+            throw new IllegalArgumentException("이미 종료된 채팅방입니다.");
+        }
+        if (room.getCloseRequester() != ChatCloseRequester.NONE) {
+            throw new IllegalArgumentException("이미 종료 요청이 진행 중인 채팅방입니다.");
+        }
+
+        room.requestClose(resolveCloseRequester(room, userId));
+
+        return new ChatCloseRequestResponse(
+                room.getChatRoomId(),
+                resolveCloseActionStatus(room, userId)
+        );
+    }
+
     private ChatRoom getParticipatingRoom(Long userId, Long roomId) {
         ChatRoom room = chatRoomRepository.findByChatRoomId(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+        validateParticipant(room, userId);
+        return room;
+    }
 
+    private ChatRoom getParticipatingRoomWithLock(Long userId, Long roomId) {
+        ChatRoom room = chatRoomRepository.findByChatRoomIdWithLock(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다."));
+        validateParticipant(room, userId);
+        return room;
+    }
+
+    private void validateParticipant(ChatRoom room, Long userId) {
         boolean isParticipant = room.getApplication().getApplicant().getUserId().equals(userId)
                 || room.getApplication().getSlot().getMentor().getMember().getUserId().equals(userId);
         if (!isParticipant) {
             throw new IllegalArgumentException("해당 채팅방에 접근할 수 없습니다.");
         }
-
-        return room;
     }
 
     private Map<Long, Long> getUnreadCountMap(List<ChatRoom> rooms, Long userId) {
@@ -186,5 +223,12 @@ public class ChatService {
         }
 
         return ChatCloseActionStatus.APPROVE;
+    }
+
+    private ChatCloseRequester resolveCloseRequester(ChatRoom room, Long userId) {
+        if (room.getApplication().getApplicant().getUserId().equals(userId)) {
+            return ChatCloseRequester.MENTEE;
+        }
+        return ChatCloseRequester.MENTOR;
     }
 }
