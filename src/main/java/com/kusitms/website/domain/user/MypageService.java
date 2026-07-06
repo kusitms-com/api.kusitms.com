@@ -1,5 +1,9 @@
 package com.kusitms.website.domain.user;
 
+import com.kusitms.website.domain.chat.entity.ChatCloseRequester;
+import com.kusitms.website.domain.chat.entity.ChatRoom;
+import com.kusitms.website.domain.chat.entity.ChatRoomStatus;
+import com.kusitms.website.domain.chat.repository.ChatRoomRepository;
 import com.kusitms.website.domain.mentoring.entity.ApplicationStatus;
 import com.kusitms.website.domain.mentoring.entity.MentoringKeyword;
 import com.kusitms.website.domain.mentoring.entity.MentoringApplication;
@@ -70,6 +74,7 @@ public class MypageService {
     private final MentoringReviewRepository mentoringReviewRepository;
     private final MentorRepository mentorRepository;
     private final MentoringSlotRepository mentoringSlotRepository;
+    private final ChatRoomRepository chatRoomRepository;
     private final S3Service s3Service;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
@@ -416,7 +421,19 @@ public class MypageService {
             throw new IllegalArgumentException("해당 시간대의 최대 인원에 도달했습니다.");
         }
 
+        if (chatRoomRepository.findByApplicationApplicationId(application.getApplicationId()).isPresent()) {
+            throw new IllegalArgumentException("이미 채팅방이 생성된 멘토링 신청입니다.");
+        }
+
         application.approve();
+        chatRoomRepository.save(ChatRoom.builder()
+                .application(application)
+                .status(ChatRoomStatus.ACTIVE)
+                .closeRequester(ChatCloseRequester.NONE)
+                .scheduledDate(slot.getDate())
+                .scheduledStartTime(slot.getStartTime())
+                .scheduledEndTime(slot.getEndTime())
+                .build());
         slot.getMentor().updateVisibility(calculateMentorVisibility(slot.getMentor()));
     }
 
