@@ -30,6 +30,16 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             "AND cm.readByRecipient = false")
     long countUnreadMessages(@Param("chatRoomId") Long chatRoomId, @Param("userId") Long userId);
 
+    @Query("SELECT cm.chatRoom.chatRoomId AS chatRoomId, COUNT(cm) AS unreadCount " +
+            "FROM ChatMessage cm " +
+            "WHERE cm.chatRoom.chatRoomId IN :chatRoomIds " +
+            "AND cm.sender.userId <> :userId " +
+            "AND cm.readByRecipient = false " +
+            "GROUP BY cm.chatRoom.chatRoomId")
+    List<UnreadCountProjection> countUnreadMessagesByRoomIds(
+            @Param("chatRoomIds") List<Long> chatRoomIds,
+            @Param("userId") Long userId);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE ChatMessage cm " +
             "SET cm.readByRecipient = true " +
