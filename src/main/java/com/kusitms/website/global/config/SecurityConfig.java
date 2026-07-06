@@ -51,6 +51,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.authorizeRequests()
                 .antMatchers("/api/**",
+                        "/ws/**",
                         "/swagger-ui/**",
                         "/api-docs",
                         "/swagger-resources/**",
