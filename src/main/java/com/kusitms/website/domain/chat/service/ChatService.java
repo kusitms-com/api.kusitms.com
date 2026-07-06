@@ -5,12 +5,16 @@ import com.kusitms.website.domain.chat.dto.request.ChatScheduleUpdateRequest;
 import com.kusitms.website.domain.chat.dto.response.ChatCloseActionStatus;
 import com.kusitms.website.domain.chat.dto.response.ChatCloseApproveResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatCloseRequestResponse;
+import com.kusitms.website.domain.chat.dto.response.ChatCloseStateResponse;
+import com.kusitms.website.domain.chat.dto.response.ChatEventType;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatReadResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageSliceResponse;
+import com.kusitms.website.domain.chat.dto.response.ChatRoomEventResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomDetailResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomListItemResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatRoomListResponse;
+import com.kusitms.website.domain.chat.dto.response.ChatScheduleUpdatedResponse;
 import com.kusitms.website.domain.chat.entity.ChatCloseRequester;
 import com.kusitms.website.domain.chat.entity.ChatMessage;
 import com.kusitms.website.domain.chat.entity.ChatMessageStatus;
@@ -26,6 +30,7 @@ import com.kusitms.website.domain.user.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +51,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public ChatRoomListResponse getChatRooms(Long userId) {
         List<ChatRoom> rooms = chatRoomRepository.findAllByParticipantUserIdOrderByRecentMessage(userId);
@@ -130,14 +136,20 @@ public class ChatService {
 
         room.updateLastMessage(message.getContent(), message.getCreatedAt());
 
-        return ChatMessageResponse.from(message, userId);
+        ChatMessageResponse response = ChatMessageResponse.from(message, userId);
+        publishRoomEvent(room.getChatRoomId(), ChatEventType.MESSAGE_SENT, response);
+        publishRoomListUpdates(room);
+        return response;
     }
 
     @Transactional
     public ChatReadResponse markMessagesAsRead(Long userId, Long roomId) {
         ChatRoom room = getParticipatingRoom(userId, roomId);
         int updatedCount = chatMessageRepository.markAllAsRead(room.getChatRoomId(), userId);
-        return new ChatReadResponse(room.getChatRoomId(), updatedCount);
+        ChatReadResponse response = new ChatReadResponse(room.getChatRoomId(), updatedCount);
+        publishRoomEvent(room.getChatRoomId(), ChatEventType.MESSAGE_READ, response);
+        publishRoomListUpdates(room);
+        return response;
     }
 
     @Transactional
@@ -153,10 +165,12 @@ public class ChatService {
 
         room.requestClose(resolveCloseRequester(room, userId));
 
-        return new ChatCloseRequestResponse(
+        ChatCloseRequestResponse response = new ChatCloseRequestResponse(
                 room.getChatRoomId(),
                 resolveCloseActionStatus(room, userId)
         );
+        publishRoomEvent(room.getChatRoomId(), ChatEventType.CLOSE_REQUESTED, ChatCloseStateResponse.from(room));
+        return response;
     }
 
     @Transactional
@@ -177,12 +191,15 @@ public class ChatService {
         room.updateStatus(ChatRoomStatus.READ_ONLY);
         room.clearCloseRequest();
 
-        return new ChatCloseApproveResponse(
+        ChatCloseApproveResponse response = new ChatCloseApproveResponse(
                 room.getChatRoomId(),
                 room.getStatus(),
                 room.getApplication().getStatus(),
                 resolveCloseActionStatus(room, userId)
         );
+        publishRoomEvent(room.getChatRoomId(), ChatEventType.CLOSE_APPROVED, ChatCloseStateResponse.from(room));
+        publishRoomListUpdates(room);
+        return response;
     }
 
     @Transactional
@@ -219,12 +236,14 @@ public class ChatService {
                 request.getScheduledEndTime()
         );
 
-        return ChatRoomDetailResponse.of(
+        ChatRoomDetailResponse response = ChatRoomDetailResponse.of(
                 room,
                 getPartnerProfileImageUrl(room, userId),
                 getPartnerName(room, userId),
                 resolveCloseActionStatus(room, userId)
         );
+        publishRoomEvent(room.getChatRoomId(), ChatEventType.SCHEDULE_UPDATED, ChatScheduleUpdatedResponse.from(room));
+        return response;
     }
 
     private ChatRoom getParticipatingRoom(Long userId, Long roomId) {
@@ -303,5 +322,45 @@ public class ChatService {
             return ChatCloseRequester.MENTEE;
         }
         return ChatCloseRequester.MENTOR;
+    }
+
+    private void publishRoomEvent(Long roomId, ChatEventType eventType, Object payload) {
+        messagingTemplate.convertAndSend(
+                "/sub/chat/rooms/" + roomId,
+                new ChatRoomEventResponse(eventType, roomId, payload)
+        );
+    }
+
+    private void publishRoomListUpdates(ChatRoom room) {
+        Long applicantUserId = room.getApplication().getApplicant().getUserId();
+        Long mentorUserId = room.getApplication().getSlot().getMentor().getMember().getUserId();
+
+        messagingTemplate.convertAndSend(
+                "/sub/chat/users/" + applicantUserId + "/rooms",
+                new ChatRoomEventResponse(
+                        ChatEventType.ROOM_LIST_UPDATED,
+                        room.getChatRoomId(),
+                        buildChatRoomListItem(room, applicantUserId)
+                )
+        );
+
+        messagingTemplate.convertAndSend(
+                "/sub/chat/users/" + mentorUserId + "/rooms",
+                new ChatRoomEventResponse(
+                        ChatEventType.ROOM_LIST_UPDATED,
+                        room.getChatRoomId(),
+                        buildChatRoomListItem(room, mentorUserId)
+                )
+        );
+    }
+
+    private ChatRoomListItemResponse buildChatRoomListItem(ChatRoom room, Long userId) {
+        long unreadCount = chatMessageRepository.countUnreadMessages(room.getChatRoomId(), userId);
+        return ChatRoomListItemResponse.of(
+                room,
+                getPartnerProfileImageUrl(room, userId),
+                getPartnerName(room, userId),
+                unreadCount
+        );
     }
 }
