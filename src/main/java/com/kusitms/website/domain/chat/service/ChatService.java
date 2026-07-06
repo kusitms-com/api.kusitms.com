@@ -1,7 +1,9 @@
 package com.kusitms.website.domain.chat.service;
 
 import com.kusitms.website.domain.chat.dto.request.ChatMessageSendRequest;
+import com.kusitms.website.domain.chat.dto.request.ChatScheduleUpdateRequest;
 import com.kusitms.website.domain.chat.dto.response.ChatCloseActionStatus;
+import com.kusitms.website.domain.chat.dto.response.ChatCloseApproveResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatCloseRequestResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatMessageResponse;
 import com.kusitms.website.domain.chat.dto.response.ChatReadResponse;
@@ -17,7 +19,9 @@ import com.kusitms.website.domain.chat.entity.ChatRoomStatus;
 import com.kusitms.website.domain.chat.repository.ChatMessageRepository;
 import com.kusitms.website.domain.chat.repository.ChatRoomRepository;
 import com.kusitms.website.domain.chat.repository.UnreadCountProjection;
+import com.kusitms.website.domain.mentoring.entity.ApplicationStatus;
 import com.kusitms.website.domain.user.Member;
+import com.kusitms.website.domain.user.MemberRole;
 import com.kusitms.website.domain.user.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +29,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -150,6 +155,74 @@ public class ChatService {
 
         return new ChatCloseRequestResponse(
                 room.getChatRoomId(),
+                resolveCloseActionStatus(room, userId)
+        );
+    }
+
+    @Transactional
+    public ChatCloseApproveResponse approveCloseChatRoom(Long userId, Long roomId) {
+        ChatRoom room = getParticipatingRoomWithLock(userId, roomId);
+
+        if (room.getStatus() == ChatRoomStatus.READ_ONLY) {
+            throw new IllegalArgumentException("이미 종료된 채팅방입니다.");
+        }
+        if (room.getCloseRequester() == ChatCloseRequester.NONE) {
+            throw new IllegalArgumentException("종료 요청이 없는 채팅방입니다.");
+        }
+        if (room.getCloseRequester() == resolveCloseRequester(room, userId)) {
+            throw new IllegalArgumentException("내가 요청한 종료는 직접 승인할 수 없습니다.");
+        }
+
+        room.getApplication().complete();
+        room.updateStatus(ChatRoomStatus.READ_ONLY);
+        room.clearCloseRequest();
+
+        return new ChatCloseApproveResponse(
+                room.getChatRoomId(),
+                room.getStatus(),
+                room.getApplication().getStatus(),
+                resolveCloseActionStatus(room, userId)
+        );
+    }
+
+    @Transactional
+    public ChatRoomDetailResponse updateSchedule(Long userId, Long roomId, ChatScheduleUpdateRequest request) {
+        ChatRoom room = getParticipatingRoomWithLock(userId, roomId);
+
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        if (member.getRole() != MemberRole.OB) {
+            throw new IllegalArgumentException("OB 회원만 일정을 수정할 수 있습니다.");
+        }
+        if (!room.getApplication().getSlot().getMentor().getMember().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("멘토만 일정을 수정할 수 있습니다.");
+        }
+        if (room.getStatus() == ChatRoomStatus.READ_ONLY) {
+            throw new IllegalArgumentException("읽기 전용 채팅방의 일정은 수정할 수 없습니다.");
+        }
+
+        LocalDateTime scheduledDateTime = LocalDateTime.of(
+                request.getScheduledDate(),
+                request.getScheduledStartTime()
+        );
+        if (!scheduledDateTime.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("현재 이후의 일정을 입력해 주세요.");
+        }
+        if (!request.getScheduledEndTime().isAfter(request.getScheduledStartTime())) {
+            throw new IllegalArgumentException("종료 시간은 시작 시간보다 이후여야 합니다.");
+        }
+
+        room.updateSchedule(
+                request.getScheduledDate(),
+                request.getScheduledStartTime(),
+                request.getScheduledEndTime()
+        );
+
+        return ChatRoomDetailResponse.of(
+                room,
+                getPartnerProfileImageUrl(room, userId),
+                getPartnerName(room, userId),
                 resolveCloseActionStatus(room, userId)
         );
     }
