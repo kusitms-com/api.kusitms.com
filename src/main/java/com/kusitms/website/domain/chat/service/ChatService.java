@@ -112,16 +112,13 @@ public class ChatService {
 
     @Transactional
     public ChatMessageResponse sendMessage(Long userId, Long roomId, ChatMessageSendRequest request) {
-        ChatRoom room = getParticipatingRoom(userId, roomId);
+        ChatRoom room = getParticipatingRoomWithLock(userId, roomId);
 
         if (room.getStatus() == ChatRoomStatus.READ_ONLY) {
             throw new IllegalArgumentException("읽기 전용 채팅방에는 메시지를 전송할 수 없습니다.");
         }
 
-        String normalizedContent = request.getContent().trim();
-        if (normalizedContent.isEmpty()) {
-            throw new IllegalArgumentException("메시지를 입력해 주세요.");
-        }
+        String normalizedContent = validateAndNormalizeMessageContent(request);
 
         Member sender = memberRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
@@ -218,6 +215,8 @@ public class ChatService {
         if (room.getStatus() == ChatRoomStatus.READ_ONLY) {
             throw new IllegalArgumentException("읽기 전용 채팅방의 일정은 수정할 수 없습니다.");
         }
+
+        validateScheduleRequest(request);
 
         LocalDateTime scheduledDateTime = LocalDateTime.of(
                 request.getScheduledDate(),
@@ -322,6 +321,30 @@ public class ChatService {
             return ChatCloseRequester.MENTEE;
         }
         return ChatCloseRequester.MENTOR;
+    }
+
+    private String validateAndNormalizeMessageContent(ChatMessageSendRequest request) {
+        if (request == null || request.getContent() == null) {
+            throw new IllegalArgumentException("메시지를 입력해 주세요.");
+        }
+
+        String normalizedContent = request.getContent().trim();
+        if (normalizedContent.isEmpty()) {
+            throw new IllegalArgumentException("메시지를 입력해 주세요.");
+        }
+        if (normalizedContent.length() > 1000) {
+            throw new IllegalArgumentException("메시지는 1000자 이하여야 합니다.");
+        }
+        return normalizedContent;
+    }
+
+    private void validateScheduleRequest(ChatScheduleUpdateRequest request) {
+        if (request == null
+                || request.getScheduledDate() == null
+                || request.getScheduledStartTime() == null
+                || request.getScheduledEndTime() == null) {
+            throw new IllegalArgumentException("변경 일정은 날짜와 시간을 모두 입력해 주세요.");
+        }
     }
 
     private void publishRoomEvent(Long roomId, ChatEventType eventType, Object payload) {

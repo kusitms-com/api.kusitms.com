@@ -47,4 +47,13 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT cr FROM ChatRoom cr WHERE cr.chatRoomId = :chatRoomId")
     Optional<ChatRoom> findByChatRoomIdWithLock(@Param("chatRoomId") Long chatRoomId);
+
+    @Query("SELECT CASE WHEN COUNT(cr) > 0 THEN true ELSE false END " +
+            "FROM ChatRoom cr " +
+            "WHERE cr.chatRoomId = :chatRoomId " +
+            "AND (cr.application.applicant.userId = :userId " +
+            "OR cr.application.slot.mentor.member.userId = :userId)")
+    boolean existsParticipantByChatRoomId(
+            @Param("chatRoomId") Long chatRoomId,
+            @Param("userId") Long userId);
 }

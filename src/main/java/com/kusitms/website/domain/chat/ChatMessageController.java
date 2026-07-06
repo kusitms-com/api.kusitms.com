@@ -4,6 +4,7 @@ import com.kusitms.website.domain.chat.dto.request.ChatMessageSendRequest;
 import com.kusitms.website.domain.chat.dto.request.ChatScheduleUpdateRequest;
 import com.kusitms.website.domain.chat.service.ChatService;
 import com.kusitms.website.global.auth.UserPrincipal;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -21,7 +22,7 @@ public class ChatMessageController {
     @MessageMapping("/chat/rooms/{roomId}/messages")
     public void sendMessage(
             @DestinationVariable Long roomId,
-            ChatMessageSendRequest request,
+            @Valid ChatMessageSendRequest request,
             Authentication authentication
     ) {
         chatService.sendMessage(getAuthenticatedUserId(authentication), roomId, request);
@@ -45,7 +46,7 @@ public class ChatMessageController {
     @MessageMapping("/chat/rooms/{roomId}/schedule")
     public void updateSchedule(
             @DestinationVariable Long roomId,
-            ChatScheduleUpdateRequest request,
+            @Valid ChatScheduleUpdateRequest request,
             Authentication authentication
     ) {
         chatService.updateSchedule(getAuthenticatedUserId(authentication), roomId, request);
