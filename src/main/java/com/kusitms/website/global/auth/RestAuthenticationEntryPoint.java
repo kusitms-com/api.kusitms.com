@@ -33,6 +33,10 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         else if(exception.equals(BaseExceptionStatus.UNSUPPORTED_AUTH_TOKEN.toString())) {
             setResponse(response, BaseExceptionStatus.UNSUPPORTED_AUTH_TOKEN);
         }
+        //승인되지 않았거나 탈퇴한 회원인 경우
+        else if(exception.equals(BaseExceptionStatus.INACTIVE_MEMBER.toString())) {
+            setResponse(response, BaseExceptionStatus.INACTIVE_MEMBER);
+        }
         else {
             setResponse(response, BaseExceptionStatus.WRONG_TOKEN);
         }

@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.admin;
 
+import com.kusitms.website.domain.admin.dto.response.AdminMemberResponse;
 import com.kusitms.website.domain.admin.dto.response.PendingMemberResponse;
 import com.kusitms.website.domain.email.service.MailService;
 import com.kusitms.website.domain.user.Member;
@@ -18,6 +19,13 @@ public class MemberAdminService {
 
     private final MemberRepository memberRepository;
     private final MailService mailService;
+
+    public List<AdminMemberResponse> getMembers(MemberStatus status) {
+        return memberRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(member -> status == null || member.getStatus() == status)
+                .map(AdminMemberResponse::from)
+                .collect(Collectors.toList());
+    }
 
     public List<PendingMemberResponse> getPendingMembers() {
         return memberRepository.findAllByStatus(MemberStatus.PENDING).stream()

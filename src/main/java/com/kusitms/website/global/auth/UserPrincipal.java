@@ -1,14 +1,13 @@
 package com.kusitms.website.global.auth;
 
 import com.kusitms.website.domain.user.Member;
-import com.kusitms.website.domain.user.MemberRole;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -26,11 +25,12 @@ public class UserPrincipal implements UserDetails {
 
 
     public static UserPrincipal create(Member user) {
-        List<GrantedAuthority> authorities;
-        if (user.getRole() == MemberRole.ADMIN) {
-            authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        } else {
-            authorities = Collections.emptyList();
+        // 어드민 권한(MEMBER/MANAGER/OWNER)과 학회원 구분(YB/OB)을 각각 ROLE로 부여한다.
+        // 상위 권한이 하위 권한을 포함하는 것은 SecurityConfig의 RoleHierarchy가 처리한다.
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(user.getAuthority().toRoleName()));
+        if (user.getRole() != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
         }
         return new UserPrincipal(
                 user.getUserId(),

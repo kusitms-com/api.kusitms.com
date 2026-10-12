@@ -7,6 +7,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -46,6 +47,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             request.setAttribute("exception", BaseExceptionStatus.EXPIRED_AUTH_TOKEN.toString());
         } catch (UnsupportedJwtException e) {
             request.setAttribute("exception", BaseExceptionStatus.UNSUPPORTED_AUTH_TOKEN.toString());
+        } catch (AuthenticationException e) {
+            request.setAttribute("exception", BaseExceptionStatus.INACTIVE_MEMBER.toString());
         } catch (IllegalArgumentException e) {
             request.setAttribute("exception", BaseExceptionStatus.WRONG_TOKEN.toString());
         } catch (Exception e) {
