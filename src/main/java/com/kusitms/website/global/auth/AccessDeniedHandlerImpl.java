@@ -17,12 +17,12 @@ public class AccessDeniedHandlerImpl implements AccessDeniedHandler {
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-        setResponse(response, BaseExceptionStatus.ACCESS_DENIED);
+        setResponse(response, BaseExceptionStatus.FORBIDDEN);
     }
     //한글 출력을 위해 getWriter() 사용
     private void setResponse(HttpServletResponse response, BaseExceptionStatus exceptionCode) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
         JSONObject responseJson = new JSONObject();
         responseJson.put("timestamp", LocalDateTime.now());
