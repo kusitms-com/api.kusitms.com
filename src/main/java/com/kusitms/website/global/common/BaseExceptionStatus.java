@@ -17,6 +17,10 @@ public enum BaseExceptionStatus {
     EXPIRED_AUTH_TOKEN(HttpStatus.UNAUTHORIZED, 401, "액세스 토큰이 만료되었습니다. 토큰을 재발급해주세요."),
     UNSUPPORTED_AUTH_TOKEN(HttpStatus.UNAUTHORIZED, 401, "지원되지 않는 토큰입니다."),
     WRONG_TOKEN(HttpStatus.UNAUTHORIZED, 401, "잘못된 형식의 토큰입니다."),
+    INACTIVE_MEMBER(HttpStatus.UNAUTHORIZED, 401, "승인되지 않았거나 탈퇴한 회원입니다."),
+
+    /* 403 FORBIDDEN : 인증은 됐지만 권한이 없는 사용자 */
+    FORBIDDEN(HttpStatus.FORBIDDEN, 403, "접근 권한이 없습니다."),
     ;
 
     private HttpStatus httpStatus;

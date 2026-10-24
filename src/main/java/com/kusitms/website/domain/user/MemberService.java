@@ -94,14 +94,10 @@ public class MemberService {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
-        // 기수 변경 시 역할 재판별
-        MemberRole role = member.getRole() != null ? member.getRole() : MemberRole.OB;
-        if (member.getCardinal() != null) {
-            Integer currentCardinal = getCurrentCardinalValue();
-            role = member.getCardinal() >= currentCardinal ? MemberRole.YB : MemberRole.OB;
-            if (member.getRole() != role) {
-                member.updateRole(role);
-            }
+        // 기수 변경 시 역할 재판별 (YB/OB만 다루며, 어드민 권한(authority)에는 영향을 주지 않는다)
+        MemberRole role = resolveRole(member);
+        if (member.getRole() != role) {
+            member.updateRole(role);
         }
 
         String accessToken = jwtTokenProvider.makeJwtToken(member.getUserId());
@@ -110,7 +106,7 @@ public class MemberService {
 
         String redirectPath = role == MemberRole.YB ? "/mypage" : "/mypage/ob/profile";
 
-        return new SignInResponse(accessToken, refreshToken, role, redirectPath);
+        return new SignInResponse(accessToken, refreshToken, role, member.getAuthority(), redirectPath);
     }
 
     public Map<String, Object> checkIdDuplicate(String id) {
@@ -141,7 +137,7 @@ public class MemberService {
 
         String redirectPath = member.getRole() == MemberRole.YB ? "/mypage" : "/mypage/ob/profile";
 
-        return new SignInResponse(newAccessToken, newRefreshToken, member.getRole(), redirectPath);
+        return new SignInResponse(newAccessToken, newRefreshToken, member.getRole(), member.getAuthority(), redirectPath);
     }
 
     public CurrentCardinalResponse getCurrentCardinal() {
@@ -158,6 +154,17 @@ public class MemberService {
 
     public List<Member> getPendingMembers() {
         return memberRepository.findAllByStatus(MemberStatus.PENDING);
+    }
+
+    /**
+     * 활동 기수로 YB/OB를 판별한다. 기수 정보가 없으면 기존 역할을 유지하고, 그마저 없으면 OB로 본다.
+     */
+    public MemberRole resolveRole(Member member) {
+        if (member.getCardinal() != null) {
+            return member.getCardinal() >= getCurrentCardinalValue() ? MemberRole.YB : MemberRole.OB;
+        }
+        MemberRole role = member.getRole();
+        return role == MemberRole.YB || role == MemberRole.OB ? role : MemberRole.OB;
     }
 
     private Integer getCurrentCardinalValue() {

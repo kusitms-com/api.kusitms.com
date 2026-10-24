@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.admin;
 
+import com.kusitms.website.domain.admin.dto.response.AdminMemberResponse;
 import com.kusitms.website.domain.admin.dto.response.PendingMemberResponse;
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
@@ -7,7 +8,7 @@ import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
-import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
+import com.kusitms.website.domain.user.MemberStatus;
 import com.kusitms.website.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,18 +23,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Admin", description = "어드민 페이지 API : 테스트 단계이므로 /admin으로 요청하는 모든 데이터는 현재 배포된 사이트와 독립적임")
+@PreAuthorize("hasRole('MANAGER')")
+@Tag(name = "Admin", description = "어드민 페이지 API (MANAGER 이상)")
 public class AdminController {
     private final IntroService introService;
     private final AdminService adminService;
     private final MemberAdminService memberAdminService;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/admin/introductions")
     @Operation(summary = "학회 소개 정보 조회", description = "학회 소개 페이지의 현재 저장된 정보를 조회합니다.")
@@ -58,8 +57,7 @@ public class AdminController {
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
     })
-    public ResponseEntity<BaseResponse> updateIntroduction(@ModelAttribute IntroRequest request, HttpServletRequest httpRequest) {
-        String token = jwtTokenProvider.getJwtFromRequest(httpRequest);
+    public ResponseEntity<BaseResponse> updateIntroduction(@ModelAttribute IntroRequest request) {
         introService.updateIntroduction(request);
         return ResponseEntity.ok(new BaseResponse());
     }
@@ -257,15 +255,21 @@ public class AdminController {
         return ResponseEntity.ok(new BaseResponse());
     }
 
+    @GetMapping("/admin/members")
+    @Operation(summary = "회원 목록 조회", description = "회원 목록을 가입일 최신순으로 조회합니다. status로 필터링할 수 있으며, 각 회원의 어드민 권한(authority)을 함께 내려줍니다.")
+    public ResponseEntity<BaseResponse<List<AdminMemberResponse>>> getMembers(
+            @RequestParam(required = false) MemberStatus status
+    ) {
+        return ResponseEntity.ok(new BaseResponse<>(memberAdminService.getMembers(status)));
+    }
+
     @GetMapping("/admin/members/pending")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "승인 대기 회원 목록 조회", description = "가입 승인 대기 중인 회원 목록을 조회합니다.")
     public ResponseEntity<BaseResponse<List<PendingMemberResponse>>> getPendingMembers() {
         return ResponseEntity.ok(new BaseResponse<>(memberAdminService.getPendingMembers()));
     }
 
     @PostMapping("/admin/members/{userId}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "회원 가입 승인", description = "대기 중인 회원의 가입을 승인합니다.")
     public ResponseEntity<BaseResponse> approveMember(
             @PathVariable Long userId
@@ -275,7 +279,6 @@ public class AdminController {
     }
 
     @PostMapping("/admin/members/{userId}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "회원 가입 반려", description = "대기 중인 회원의 가입을 반려하고 계정을 삭제합니다.")
     public ResponseEntity<BaseResponse> rejectMember(
             @PathVariable Long userId

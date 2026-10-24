@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.user.dto.response;
 
+import com.kusitms.website.domain.user.MemberAuthority;
 import com.kusitms.website.domain.user.MemberRole;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,9 @@ public class SignInResponse {
 
     @Schema(description = "사용자 역할 (YB/OB)")
     private MemberRole role;
+
+    @Schema(description = "어드민 권한 (MEMBER/MANAGER/OWNER). MANAGER 이상만 어드민 API 사용 가능")
+    private MemberAuthority authority;
 
     @Schema(description = "리다이렉트 경로")
     private String redirectPath;

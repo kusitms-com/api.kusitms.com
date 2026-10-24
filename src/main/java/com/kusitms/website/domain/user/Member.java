@@ -44,6 +44,10 @@ public class Member {
     @Column(name = "member_role")
     private MemberRole role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "member_authority")
+    private MemberAuthority authority;
+
     private String refreshToken;
 
     private LocalDateTime createdAt;
@@ -63,7 +67,17 @@ public class Member {
         this.email = email;
         this.status = status;
         this.role = role;
+        this.authority = MemberAuthority.MEMBER;
         this.createdAt = LocalDateTime.now();
+    }
+
+    // 컬럼 추가 이전에 가입한 회원은 authority가 null이므로 MEMBER로 취급한다.
+    public MemberAuthority getAuthority() {
+        return authority != null ? authority : MemberAuthority.MEMBER;
+    }
+
+    public void updateAuthority(MemberAuthority authority) {
+        this.authority = authority;
     }
 
     public void updateRefreshToken(String refreshToken) {
@@ -101,6 +115,7 @@ public class Member {
         this.certificateImageUrl = null;
         this.email = null;
         this.role = null;
+        this.authority = MemberAuthority.MEMBER;
         this.refreshToken = null;
         this.status = MemberStatus.WITHDRAWN;
     }
