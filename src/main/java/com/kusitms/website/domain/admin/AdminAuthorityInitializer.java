@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * 서버 기동 시 어드민 권한 데이터를 정리한다.
  * 1. 기존 role=ADMIN 회원을 authority=MANAGER로 옮기고, role은 기수 기준 YB/OB로 되돌린다.
- * 2. admin.owner-ids에 지정된 로그인 ID를 OWNER로 승격한다. (최초 OWNER 부트스트랩용)
+ * 2. OWNER가 한 명도 없을 때만 admin.owner-ids에 지정된 로그인 ID를 OWNER로 승격한다. (최초/복구용 부트스트랩)
  */
 @Slf4j
 @Component
@@ -44,7 +44,9 @@ public class AdminAuthorityInitializer implements ApplicationRunner {
             log.info("레거시 ADMIN 회원 권한 이전: userId={}, authority={}", member.getUserId(), member.getAuthority());
         }
 
-        if (ownerIds.isEmpty()) {
+        // OWNER가 이미 있으면 API로 강등한 권한을 재배포 시 덮어쓰지 않는다.
+        // OWNER가 0명일 때만(마지막 OWNER 탈퇴 등) owner-ids로 복구한다.
+        if (ownerIds.isEmpty() || !memberRepository.findAllByAuthority(MemberAuthority.OWNER).isEmpty()) {
             return;
         }
         for (Member member : memberRepository.findAllByIdIn(ownerIds)) {
