@@ -33,7 +33,9 @@ import javax.persistence.EntityManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -129,7 +131,6 @@ class AdminContentTest {
                         .file(image("logoFile", "logo.png"))
                         .file(image("posterFile", "poster.png"))
                         .file(image("webThumbnailFile", "thumb.png")))
-                        .param("displayFlag", "true")
                         .param("planner", "김기획")
                         .param("backend", "이백엔드", "박백엔드")
                         .param("tag", "웹")))
@@ -137,7 +138,6 @@ class AdminContentTest {
         flushAndClear();
 
         MeetupProject saved = meetupRepository.findAllByCardinal(34).get(0);
-        assertThat(saved.isDisplayFlag()).isTrue();
         assertThat(saved.getWebThumbnailUrl()).isEqualTo("meetup/thumb.png");
         assertThat(meetupTeamRepository.count()).isEqualTo(3);
 
@@ -147,7 +147,7 @@ class AdminContentTest {
                 .andExpect(jsonPath("$.data.web_thumbnail_url", endsWith("meetup/thumb.png")))
                 .andExpect(jsonPath("$.data.team.backend", containsInAnyOrder("이백엔드", "박백엔드")));
 
-        // 파일·displayFlag 없이 수정: 이미지/노출 여부 유지, 팀원·태그 교체
+        // 파일 없이 수정: 이미지 유지, 팀원·태그 교체
         mockMvc.perform(auth(meetupRequest(multipart("/admin/projects/meetup")).with(asPut())
                         .param("meetupId", saved.getMeetupId().toString())
                         .param("designer", "최디자인")
@@ -159,7 +159,6 @@ class AdminContentTest {
         assertThat(updated.getLogoUrl()).isEqualTo("meetup/logo.png");
         assertThat(updated.getPosterUrl()).isEqualTo("meetup/poster.png");
         assertThat(updated.getWebThumbnailUrl()).isEqualTo("meetup/thumb.png");
-        assertThat(updated.isDisplayFlag()).isTrue();
         assertThat(updated.getTeam()).extracting("name").containsExactly("최디자인");
         assertThat(updated.getTags()).extracting("name").containsExactly("앱");
         assertThat(meetupTeamRepository.count()).isEqualTo(1);
@@ -173,6 +172,30 @@ class AdminContentTest {
         flushAndClear();
         assertThat(meetupRepository.findById(saved.getMeetupId())).isEmpty();
         assertThat(meetupTeamRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("선택 입력이 없으면 웹 썸네일은 null, 기업 프로젝트 분류는 빈 목록으로 응답한다")
+    void optionalFieldsAreEmpty() throws Exception {
+        mockMvc.perform(auth(meetupRequest(multipart("/admin/projects/meetup")
+                        .file(image("logoFile", "logo.png"))
+                        .file(image("posterFile", "poster.png")))))
+                .andExpect(status().isOk());
+        mockMvc.perform(auth(multipart("/admin/projects/corporate")
+                        .file(image("logoFile", "logo.png"))
+                        .file(image("bannerFile", "banner.png"))
+                        .param("cardinal", "34")
+                        .param("name", "큐시즘")
+                        .param("content", "태그 없음")))
+                .andExpect(status().isOk());
+        flushAndClear();
+
+        mockMvc.perform(get("/api/projects/meetup").param("cardinal", "34"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.meetup_list[0].web_thumbnail_url").value(nullValue()));
+        mockMvc.perform(get("/api/projects/corporate").param("cardinal", "34"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.corporateList[0].category", empty()));
     }
 
     @Test

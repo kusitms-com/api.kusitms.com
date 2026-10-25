@@ -116,7 +116,7 @@ public class AdminService {
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()
                 .map(p -> {
-                    MeetupDetailResponse response = new MeetupDetailResponse(p, false);
+                    MeetupDetailResponse response = MeetupDetailResponse.forAdmin(p, false);
                     response.setTags(toTagNames(p.getTags()));
                     return response;
                 })
@@ -132,7 +132,7 @@ public class AdminService {
     public MeetupDetailResponse getMeetupProject(Long meetupId) {
         MeetupProject findProject = meetupRepository.findById(meetupId).orElseThrow();
 
-        MeetupDetailResponse response = new MeetupDetailResponse(findProject, true);
+        MeetupDetailResponse response = MeetupDetailResponse.forAdmin(findProject, true);
         response.setTags(toTagNames(findProject.getTags()));
         return response;
     }
@@ -170,7 +170,6 @@ public class AdminService {
                 request.getInstagramUrl(),
                 request.getGithubUrl(),
                 request.getAppUrl(),
-                request.getDisplayFlag(),
                 LocalDate.parse(request.getStartDate(), DateTimeFormatter.ISO_DATE),
                 LocalDate.parse(request.getEndDate(), DateTimeFormatter.ISO_DATE),
                 request.getTeamName());

@@ -103,15 +103,11 @@ public class MeetupProject {
 
     public void update(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
                        String logoUrl, String posterUrl, String webThumbnailUrl, String behanceUrl, String instagramUrl,
-                       String githubUrl, String appUrl, Boolean displayFlag, LocalDate startDate, LocalDate endDate,
-                       String teamName) {
+                       String githubUrl, String appUrl, LocalDate startDate, LocalDate endDate, String teamName) {
         this.cardinal = cardinal;
         this.name = name;
         this.intro = intro;
         this.type = type;
-        if (displayFlag != null) {
-            this.displayFlag = displayFlag;
-        }
         this.oneLineIntro = oneLineIntro;
         this.logoUrl = logoUrl;
         this.posterUrl = posterUrl;
@@ -123,10 +119,6 @@ public class MeetupProject {
         this.startDate = startDate;
         this.endDate = endDate;
         this.teamName = teamName;
-    }
-
-    public void updateTeam(List<MeetupTeam> team) {
-        this.team = team;
     }
 
     public void clearTeam() {

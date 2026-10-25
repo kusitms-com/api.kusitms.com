@@ -6,8 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.kusitms.website.global.util.S3Util.s3Url;
 
@@ -47,7 +49,10 @@ public class CorporateDetailResponse {
     }
 
     private List<String> splitCategory(String categoryString) {
-        return Arrays.asList(categoryString.split("#"));
+        if (categoryString == null) return new ArrayList<>();
+        return Arrays.stream(categoryString.split("#"))
+                .filter(category -> !category.isBlank())
+                .collect(Collectors.toList());
     }
 
 }

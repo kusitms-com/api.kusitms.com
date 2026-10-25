@@ -55,9 +55,6 @@ public class MeetupRequest {
     @Schema(description = "팀명", example = "오텐션")
     private String teamName;
 
-    @Schema(description = "노출 여부 (미입력 시 등록은 false, 수정은 기존 값 유지)", example = "true")
-    private Boolean displayFlag;
-
     @Schema(description = "태그")
     private List<String> tag = new ArrayList<>();
 
@@ -105,7 +102,6 @@ public class MeetupRequest {
                 .logoUrl(logoUrl)
                 .posterUrl(posterUrl)
                 .webThumbnailUrl(webThumbnailUrl)
-                .displayFlag(request.getDisplayFlag())
                 .teamName(request.getTeamName())
                 .build();
     }
