@@ -160,17 +160,21 @@ public class MemberService {
      * 활동 기수로 YB/OB를 판별한다. 기수 정보가 없으면 기존 역할을 유지하고, 그마저 없으면 OB로 본다.
      */
     public MemberRole resolveRole(Member member) {
+        return resolveRole(member, getCurrentCardinalValue());
+    }
+
+    public MemberRole resolveRole(Member member, int currentCardinal) {
         if (member.getCardinal() != null) {
-            return member.getCardinal() >= getCurrentCardinalValue() ? MemberRole.YB : MemberRole.OB;
+            return member.getCardinal() >= currentCardinal ? MemberRole.YB : MemberRole.OB;
         }
         MemberRole role = member.getRole();
         return role == MemberRole.YB || role == MemberRole.OB ? role : MemberRole.OB;
     }
 
-    private Integer getCurrentCardinalValue() {
-        return currentCardinalRepository.findById(1L)
+    public Integer getCurrentCardinalValue() {
+        return currentCardinalRepository.findTopByOrderByIdAsc()
                 .map(CurrentCardinal::getCardinal)
-                .orElse(33);
+                .orElseThrow(() -> new IllegalStateException("현재 기수가 설정되지 않았습니다."));
     }
 
     private void validateSignUpRequest(SignUpRequest request, MultipartFile certificateImage) {
@@ -205,8 +209,10 @@ public class MemberService {
             throw new IllegalArgumentException("이메일을 입력해 주세요.");
         }
 
-        if (request.getCardinal() <= 33 && (certificateImage == null || certificateImage.isEmpty())) {
-            throw new IllegalArgumentException("33기 이하 회원은 수료증을 업로드해 주세요.");
+        // 현재 기수보다 이전 기수(OB)는 수료증으로 활동 이력을 확인한다
+        int currentCardinal = getCurrentCardinalValue();
+        if (request.getCardinal() < currentCardinal && (certificateImage == null || certificateImage.isEmpty())) {
+            throw new IllegalArgumentException((currentCardinal - 1) + "기 이하 회원은 수료증을 업로드해 주세요.");
         }
     }
 
