@@ -1,29 +1,30 @@
 package com.kusitms.website.domain.admin;
 
-import com.kusitms.website.domain.admin.entity.TMPCorporateProject;
 import com.kusitms.website.domain.admin.entity.TMPBlogReview;
-import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
-import com.kusitms.website.domain.admin.entity.TMPMeetupTeam;
-import com.kusitms.website.domain.admin.entity.TMPReview;
 import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
-import com.kusitms.website.domain.admin.repository.TMPCorporateRepository;
-import com.kusitms.website.domain.admin.repository.TMPMeetupRepository;
-import com.kusitms.website.domain.admin.repository.TMPMeetupTeamRepository;
-import com.kusitms.website.domain.admin.repository.TMPReviewRepository;
 import com.kusitms.website.domain.blog.dto.response.BlogReviewDetailResponse;
 import com.kusitms.website.domain.blog.dto.response.BlogReviewResponse;
 import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.file.S3Service;
+import com.kusitms.website.domain.project.CorporateRepository;
+import com.kusitms.website.domain.project.MeetupRepository;
+import com.kusitms.website.domain.project.TagRepository;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.domain.project.dto.response.CorporateDetailResponse;
 import com.kusitms.website.domain.project.dto.response.CorporateResponse;
 import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
 import com.kusitms.website.domain.project.dto.response.MeetupResponse;
+import com.kusitms.website.domain.project.entity.CorporateProject;
+import com.kusitms.website.domain.project.entity.MeetupProject;
+import com.kusitms.website.domain.project.entity.MeetupTeam;
+import com.kusitms.website.domain.project.entity.Tag;
 import com.kusitms.website.domain.project.entity.Team;
+import com.kusitms.website.domain.review.ReviewRepository;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
 import com.kusitms.website.domain.review.dto.response.ReviewDetailResponse;
 import com.kusitms.website.domain.review.dto.response.ReviewResponse;
+import com.kusitms.website.domain.review.entity.Review;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,17 +32,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AdminService {
     private final S3Service s3Service;
-    private final TMPCorporateRepository corporateRepository;
-    private final TMPMeetupRepository meetupRepository;
-    private final TMPMeetupTeamRepository meetupTeamRepository;
-    private final TMPReviewRepository reviewRepository;
+    private final CorporateRepository corporateRepository;
+    private final MeetupRepository meetupRepository;
+    private final TagRepository tagRepository;
+    private final ReviewRepository reviewRepository;
     private final TMPBlogReviewRepository blogReviewRepository;
 
     @Transactional(readOnly = true)
@@ -95,7 +98,7 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public ReviewResponse getReviews() {
-        List<TMPReview> findReviews = reviewRepository.findAll();
+        List<Review> findReviews = reviewRepository.findAllByOrderByReviewIdDesc();
 
         List<ReviewDetailResponse> reviewDetailResponses = findReviews.stream()
                 .map(r -> new ReviewDetailResponse(r.getReviewId(), r.getName(), r.getCardinal(), r.getTeam(), r.getReview()))
@@ -109,10 +112,14 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public MeetupResponse getMeetupProjects() {
-        List<TMPMeetupProject> findProjects = meetupRepository.findAllByOrderByCardinalDesc();
+        List<MeetupProject> findProjects = meetupRepository.findAllByOrderByCardinalDesc();
 
         List<MeetupDetailResponse> meetupDetailResponses = findProjects.stream()
-                .map(p -> new MeetupDetailResponse(p, false))
+                .map(p -> {
+                    MeetupDetailResponse response = new MeetupDetailResponse(p, false);
+                    response.setTags(toTagNames(p.getTags()));
+                    return response;
+                })
                 .collect(Collectors.toList());
 
         return MeetupResponse.builder()
@@ -123,70 +130,33 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public MeetupDetailResponse getMeetupProject(Long meetupId) {
-        TMPMeetupProject findProject = meetupRepository.findById(meetupId).orElseThrow();
+        MeetupProject findProject = meetupRepository.findById(meetupId).orElseThrow();
 
-        return new MeetupDetailResponse(findProject, true);
+        MeetupDetailResponse response = new MeetupDetailResponse(findProject, true);
+        response.setTags(toTagNames(findProject.getTags()));
+        return response;
     }
 
     @Transactional
     public void saveMeetup(MeetupRequest request) {
         String logoUrl = s3Service.uploadFile(request.getLogoFile(), "meetup");
         String posterUrl = s3Service.uploadFile(request.getPosterFile(), "meetup");
+        String webThumbnailUrl = uploadOrKeep(request.getWebThumbnailFile(), null, "meetup");
 
-        TMPMeetupProject meetup = MeetupRequest.from(request, logoUrl, posterUrl);
+        MeetupProject meetup = MeetupRequest.from(request, logoUrl, posterUrl, webThumbnailUrl);
+        addTeamMembers(meetup, request);
+        meetup.updateTags(resolveTags(request.getTag()));
 
         meetupRepository.save(meetup);
-
-        for(String name : request.getPlanner()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                            .meetup(meetup)
-                            .team(Team.PLANNER)
-                            .name(name)
-                            .build());
-        }
-        for(String name : request.getDesigner()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                            .meetup(meetup)
-                            .team(Team.DESIGNER)
-                            .name(name)
-                            .build());
-        }
-        for(String name : request.getFrontend()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                            .meetup(meetup)
-                            .team(Team.FRONTEND)
-                            .name(name)
-                            .build());
-        }
-        for(String name : request.getBackend()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                            .meetup(meetup)
-                            .team(Team.BACKEND)
-                            .name(name)
-                            .build());
-        }
-        for(String name : request.getIos()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.IOS)
-                    .name(name)
-                    .build());
-        }
-        for(String name : request.getAos()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.ANDROID)
-                    .name(name)
-                    .build());
-        }
     }
 
     @Transactional
     public void updateMeetup(MeetupRequest request) {
-        TMPMeetupProject meetup = meetupRepository.findById(request.getMeetupId()).orElseThrow();
+        MeetupProject meetup = meetupRepository.findById(request.getMeetupId()).orElseThrow();
 
         String logoUrl = uploadOrKeep(request.getLogoFile(), meetup.getLogoUrl(), "meetup");
         String posterUrl = uploadOrKeep(request.getPosterFile(), meetup.getPosterUrl(), "meetup");
+        String webThumbnailUrl = uploadOrKeep(request.getWebThumbnailFile(), meetup.getWebThumbnailUrl(), "meetup");
 
         meetup.update(request.getCardinal(),
                 request.getName(),
@@ -195,60 +165,19 @@ public class AdminService {
                 request.getOneLineIntro(),
                 logoUrl,
                 posterUrl,
+                webThumbnailUrl,
+                request.getBehanceUrl(),
                 request.getInstagramUrl(),
                 request.getGithubUrl(),
                 request.getAppUrl(),
-                request.getBehanceUrl(),
+                request.getDisplayFlag(),
                 LocalDate.parse(request.getStartDate(), DateTimeFormatter.ISO_DATE),
                 LocalDate.parse(request.getEndDate(), DateTimeFormatter.ISO_DATE),
                 request.getTeamName());
 
-        meetupTeamRepository.deleteByMeetupProject(meetup);
-
-        for(String name : request.getPlanner()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.PLANNER)
-                    .name(name)
-                    .build());
-        }
-        for(String name : request.getDesigner()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.DESIGNER)
-                    .name(name)
-                    .build());
-        }
-        for(String name : request.getFrontend()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.FRONTEND)
-                    .name(name)
-                    .build());
-        }
-        for(String name : request.getBackend()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.BACKEND)
-                    .name(name)
-                    .build());
-        }
-        for(String name : request.getIos()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.IOS)
-                    .name(name)
-                    .build());
-        }
-        for(String name : request.getAos()) {
-            meetupTeamRepository.save(TMPMeetupTeam.builder()
-                    .meetup(meetup)
-                    .team(Team.ANDROID)
-                    .name(name)
-                    .build());
-        }
-
-        meetupRepository.save(meetup);
+        meetup.clearTeam();
+        addTeamMembers(meetup, request);
+        meetup.updateTags(resolveTags(request.getTag()));
     }
 
     @Transactional
@@ -258,10 +187,10 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public CorporateResponse getCorporateProjects() {
-        List<TMPCorporateProject> findProjects = corporateRepository.findAllByOrderByCardinalDesc();
+        List<CorporateProject> findProjects = corporateRepository.findAllByOrderByCardinalDesc();
 
         List<CorporateDetailResponse> detailResponses = findProjects.stream()
-                .map(p -> new CorporateDetailResponse(p))
+                .map(this::toCorporateDetailResponse)
                 .collect(Collectors.toList());
 
         return CorporateResponse.builder()
@@ -272,8 +201,8 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public CorporateDetailResponse getCorporateProject(Long corporateId) {
-        TMPCorporateProject findProject = corporateRepository.findById(corporateId).orElseThrow();
-        return new CorporateDetailResponse(findProject);
+        CorporateProject findProject = corporateRepository.findById(corporateId).orElseThrow();
+        return toCorporateDetailResponse(findProject);
     }
 
     @Transactional
@@ -281,42 +210,28 @@ public class AdminService {
         String logoUrl = s3Service.uploadFile(request.getLogoFile(), "corporate");
         String bannerUrl = s3Service.uploadFile(request.getBannerFile(), "corporate");
 
-        String category = "";
-        for(int i = 0; i < request.getTag().size(); i++) {
-            if(i == request.getTag().size() - 1) {
-                category += request.getTag().get(i);
-            } else {
-                category +=  request.getTag().get(i) + "#";
-            }
-        }
-
-        TMPCorporateProject corporate = CorporateRequest.from(request, category, logoUrl, bannerUrl);
+        Set<Tag> tags = resolveTags(request.getTag());
+        CorporateProject corporate = CorporateRequest.from(request, joinCategory(tags), logoUrl, bannerUrl);
+        corporate.updateTags(tags);
 
         corporateRepository.save(corporate);
     }
 
     @Transactional
     public void updateCorporate(CorporateRequest request) {
-        TMPCorporateProject corporate = corporateRepository.findById(request.getCorporateId()).orElseThrow();
+        CorporateProject corporate = corporateRepository.findById(request.getCorporateId()).orElseThrow();
 
-        String logoUrl = s3Service.uploadFile(request.getLogoFile(), "corporate");
-        String bannerUrl = s3Service.uploadFile(request.getBannerFile(), "corporate");
+        String logoUrl = uploadOrKeep(request.getLogoFile(), corporate.getLogoUrl(), "corporate");
+        String bannerUrl = uploadOrKeep(request.getBannerFile(), corporate.getBannerUrl(), "corporate");
 
-        String category = "";
-        for(int i = 0; i < request.getTag().size(); i++) {
-            if(i == request.getTag().size() - 1) {
-                category += request.getTag().get(i);
-            } else {
-                category +=  request.getTag().get(i) + "#";
-            }
-        }
-
+        Set<Tag> tags = resolveTags(request.getTag());
         corporate.update(request.getCardinal(),
                 request.getName(),
                 request.getContent(),
                 logoUrl,
                 bannerUrl,
-                category);
+                joinCategory(tags));
+        corporate.updateTags(tags);
     }
 
     @Transactional
@@ -326,22 +241,83 @@ public class AdminService {
 
     @Transactional
     public void saveReview(ReviewRequest request) {
-        TMPReview review = ReviewRequest.from(request);
+        Review review = ReviewRequest.from(request);
         reviewRepository.save(review);
     }
 
     @Transactional
     public void updateReview(ReviewRequest request) {
-      TMPReview review = reviewRepository.findById(request.getReviewId()).orElseThrow();
-      review.update(request.getName(),
-              request.getCardinal(),
-              request.getTeam(),
-              request.getReview());
+        Review review = reviewRepository.findById(request.getReviewId()).orElseThrow();
+        review.update(request.getName(),
+                request.getCardinal(),
+                request.getTeam(),
+                request.getReview());
     }
 
     @Transactional
     public void deleteReview(Long reviewId) {
         reviewRepository.deleteById(reviewId);
+    }
+
+    private void addTeamMembers(MeetupProject meetup, MeetupRequest request) {
+        addTeamMembers(meetup, Team.PLANNER, request.getPlanner());
+        addTeamMembers(meetup, Team.DESIGNER, request.getDesigner());
+        addTeamMembers(meetup, Team.FRONTEND, request.getFrontend());
+        addTeamMembers(meetup, Team.BACKEND, request.getBackend());
+        addTeamMembers(meetup, Team.IOS, request.getIos());
+        addTeamMembers(meetup, Team.ANDROID, request.getAos());
+    }
+
+    private void addTeamMembers(MeetupProject meetup, Team team, List<String> names) {
+        if (names == null) return;
+        for (String name : names) {
+            // MeetupTeam 생성자가 meetup.getTeam()에 추가하므로 cascade로 함께 저장됨
+            MeetupTeam.builder()
+                    .meetup(meetup)
+                    .team(team)
+                    .name(name)
+                    .build();
+        }
+    }
+
+    private Set<Tag> resolveTags(List<String> tagNames) {
+        Set<Tag> tags = new LinkedHashSet<>();
+        if (tagNames == null) return tags;
+
+        for (String tagName : tagNames) {
+            String name = normalizeTagName(tagName);
+            if (name.isEmpty()) continue;
+            tags.add(tagRepository.findByName(name)
+                    .orElseGet(() -> tagRepository.save(new Tag(name))));
+        }
+        return tags;
+    }
+
+    private String normalizeTagName(String tagName) {
+        if (tagName == null) return "";
+        String name = tagName.trim();
+        while (name.startsWith("#")) {
+            name = name.substring(1).trim();
+        }
+        return name;
+    }
+
+    private String joinCategory(Set<Tag> tags) {
+        return tags.stream()
+                .map(Tag::getName)
+                .collect(Collectors.joining("#"));
+    }
+
+    private List<String> toTagNames(Set<Tag> tags) {
+        return tags.stream()
+                .map(tag -> "#" + tag.getName())
+                .collect(Collectors.toList());
+    }
+
+    private CorporateDetailResponse toCorporateDetailResponse(CorporateProject project) {
+        CorporateDetailResponse response = new CorporateDetailResponse(project);
+        response.setTags(toTagNames(project.getTags()));
+        return response;
     }
 
     private String uploadOrKeep(MultipartFile file, String existingUrl, String dirName) {

@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.project.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
+import com.kusitms.website.domain.project.entity.MeetupProject;
 import com.kusitms.website.domain.project.entity.ProjectType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -55,6 +55,12 @@ public class MeetupRequest {
     @Schema(description = "팀명", example = "오텐션")
     private String teamName;
 
+    @Schema(description = "노출 여부 (미입력 시 등록은 false, 수정은 기존 값 유지)", example = "true")
+    private Boolean displayFlag;
+
+    @Schema(description = "태그")
+    private List<String> tag = new ArrayList<>();
+
     @Schema(description = "기획자 팀원")
     private List<String> planner = new ArrayList<>();
 
@@ -79,8 +85,12 @@ public class MeetupRequest {
     @Schema(description = "아이템 포스터 이미지 파일")
     private MultipartFile posterFile;
 
-    public static TMPMeetupProject from(MeetupRequest request, String logoUrl, String posterUrl) {
-        return TMPMeetupProject.builder()
+    @Schema(description = "웹 썸네일 이미지 파일")
+    private MultipartFile webThumbnailFile;
+
+    public static MeetupProject from(MeetupRequest request, String logoUrl, String posterUrl,
+                                     String webThumbnailUrl) {
+        return MeetupProject.builder()
                 .cardinal(request.getCardinal())
                 .name(request.getName())
                 .intro(request.getIntro())
@@ -94,6 +104,8 @@ public class MeetupRequest {
                 .endDate(LocalDate.parse(request.getEndDate(), DateTimeFormatter.ISO_DATE))
                 .logoUrl(logoUrl)
                 .posterUrl(posterUrl)
+                .webThumbnailUrl(webThumbnailUrl)
+                .displayFlag(request.getDisplayFlag())
                 .teamName(request.getTeamName())
                 .build();
     }

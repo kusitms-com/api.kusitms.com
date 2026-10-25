@@ -1,11 +1,12 @@
 package com.kusitms.website.domain.project.dto.request;
 
-import com.kusitms.website.domain.admin.entity.TMPCorporateProject;
+import com.kusitms.website.domain.project.entity.CorporateProject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -25,7 +26,7 @@ public class CorporateRequest {
     private String content;
 
     @Schema(description = "태그")
-    private List<String> tag;
+    private List<String> tag = new ArrayList<>();
 
     @Schema(description = "로고 이미지 파일")
     private MultipartFile logoFile;
@@ -33,9 +34,9 @@ public class CorporateRequest {
     @Schema(description = "배너 이미지 파일")
     private MultipartFile bannerFile;
 
-    public static TMPCorporateProject from(CorporateRequest request, String category,
-                                           String logoUrl, String bannerUrl) {
-        return TMPCorporateProject.builder()
+    public static CorporateProject from(CorporateRequest request, String category,
+                                        String logoUrl, String bannerUrl) {
+        return CorporateProject.builder()
                 .cardinal(request.getCardinal())
                 .name(request.getName())
                 .content(request.getContent())

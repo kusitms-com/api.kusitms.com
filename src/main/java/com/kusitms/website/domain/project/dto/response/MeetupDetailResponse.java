@@ -2,7 +2,6 @@ package com.kusitms.website.domain.project.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
 import com.kusitms.website.domain.project.entity.MeetupProject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -104,27 +103,6 @@ public class MeetupDetailResponse {
             this.startDate = meetup.getStartDate();
             this.endDate = meetup.getEndDate();
             this.team = new MeetupTeamResponse(meetup.getTeam(), meetup.getTeamName());
-        }
-    }
-
-    public MeetupDetailResponse(TMPMeetupProject meetup, boolean isDetail) {
-        this.meetupId = meetup.getMeetupId();
-        this.cardinal = meetup.getCardinal();
-        this.name = meetup.getName();
-        this.posterUrl = s3Url + meetup.getPosterUrl();
-        this.logoUrl = s3Url + meetup.getLogoUrl();
-        this.oneLineIntro = meetup.getOneLineIntro();
-        this.behanceUrl = meetup.getBehanceUrl();
-        this.instagramUrl = meetup.getInstagramUrl();
-        this.githubUrl = meetup.getGithubUrl();
-        this.appUrl = meetup.getAppUrl();
-
-        if(isDetail) {
-            this.type = meetup.getType().getName();
-            this.intro = meetup.getIntro();
-            this.startDate = meetup.getStartDate();
-            this.endDate = meetup.getEndDate();
-            this.team = new MeetupTeamResponse(meetup.getTeamName(), meetup.getTeam());
         }
     }
 }
