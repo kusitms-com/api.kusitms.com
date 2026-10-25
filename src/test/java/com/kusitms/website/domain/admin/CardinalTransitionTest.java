@@ -1,6 +1,7 @@
 package com.kusitms.website.domain.admin;
 
 import com.kusitms.website.domain.file.S3Service;
+import com.kusitms.website.domain.user.CurrentCardinalRepository;
 import com.kusitms.website.domain.user.Member;
 import com.kusitms.website.domain.user.MemberAuthority;
 import com.kusitms.website.domain.user.MemberRepository;
@@ -37,6 +38,7 @@ class CardinalTransitionTest {
     @Autowired MockMvc mockMvc;
     @Autowired MemberRepository memberRepository;
     @Autowired MemberService memberService;
+    @Autowired CurrentCardinalRepository currentCardinalRepository;
     @Autowired JwtTokenProvider jwtTokenProvider;
 
     @MockBean S3Service s3Service;
@@ -113,6 +115,45 @@ class CardinalTransitionTest {
         mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("현재 기수는 다음 기수 또는 직전 기수로만 바꿀 수 있다 (오입력 방지)")
+    void onlyAdjacentCardinalAllowed() throws Exception {
+        // 현재 33기: 340(오타), 35(건너뛰기)는 거절
+        for (String cardinal : new String[]{"340", "35"}) {
+            mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":" + cardinal + "}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("현재 기수는 33기입니다. 34기 또는 32기로만 변경할 수 있습니다."));
+        }
+        assertThat(yb33.getRole()).isEqualTo(MemberRole.YB);
+    }
+
+    @Test
+    @DisplayName("같은 기수로 다시 요청하면 변경 없이 성공한다 (재시도 안전)")
+    void sameCardinalIsNoOp() throws Exception {
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":33}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.previousCardinal").value(33))
+                .andExpect(jsonPath("$.data.currentCardinal").value(33))
+                .andExpect(jsonPath("$.data.changedToOb").value(0))
+                .andExpect(jsonPath("$.data.changedToYb").value(0));
+        assertThat(yb33.getRole()).isEqualTo(MemberRole.YB);
+    }
+
+    @Test
+    @DisplayName("현재 기수 값이 비어 있으면 ±1 제한 없이 설정할 수 있다")
+    void emptyCardinalCanBeFixed() throws Exception {
+        currentCardinalRepository.findTopByOrderByIdAsc().orElseThrow().updateCardinal(null);
+        currentCardinalRepository.flush();
+
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":34}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.currentCardinal").value(34));
+        assertThat(yb33.getRole()).isEqualTo(MemberRole.OB);
     }
 
     @Test

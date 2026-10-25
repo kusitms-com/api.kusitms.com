@@ -38,7 +38,8 @@ public class MemberService {
 
     @Transactional
     public Long signup(SignUpRequest request, MultipartFile profileImage, MultipartFile certificateImage) {
-        validateSignUpRequest(request, certificateImage);
+        int currentCardinal = getCurrentCardinalValue();
+        validateSignUpRequest(request, certificateImage, currentCardinal);
 
         if (memberRepository.existsById(request.getId())) {
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
@@ -49,8 +50,7 @@ public class MemberService {
             validateImageFile(certificateImage, "수료증");
         }
 
-        Integer currentCardinal = getCurrentCardinalValue();
-        MemberRole role = request.getCardinal() >= currentCardinal ? MemberRole.YB : MemberRole.OB;
+        MemberRole role = roleOf(request.getCardinal(), currentCardinal);
 
         String profileImageUrl = s3Service.uploadFile(profileImage, "profile");
         String certificateImageUrl = null;
@@ -165,10 +165,15 @@ public class MemberService {
 
     public MemberRole resolveRole(Member member, int currentCardinal) {
         if (member.getCardinal() != null) {
-            return member.getCardinal() >= currentCardinal ? MemberRole.YB : MemberRole.OB;
+            return roleOf(member.getCardinal(), currentCardinal);
         }
         MemberRole role = member.getRole();
         return role == MemberRole.YB || role == MemberRole.OB ? role : MemberRole.OB;
+    }
+
+    // 활동 기수가 현재 기수 이상이면 YB, 이전 기수면 OB
+    private MemberRole roleOf(int cardinal, int currentCardinal) {
+        return cardinal >= currentCardinal ? MemberRole.YB : MemberRole.OB;
     }
 
     public Integer getCurrentCardinalValue() {
@@ -177,7 +182,7 @@ public class MemberService {
                 .orElseThrow(() -> new IllegalStateException("현재 기수가 설정되지 않았습니다."));
     }
 
-    private void validateSignUpRequest(SignUpRequest request, MultipartFile certificateImage) {
+    private void validateSignUpRequest(SignUpRequest request, MultipartFile certificateImage, int currentCardinal) {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new IllegalArgumentException("아이디를 입력해 주세요.");
         }
@@ -210,7 +215,6 @@ public class MemberService {
         }
 
         // 현재 기수보다 이전 기수(OB)는 수료증으로 활동 이력을 확인한다
-        int currentCardinal = getCurrentCardinalValue();
         if (request.getCardinal() < currentCardinal && (certificateImage == null || certificateImage.isEmpty())) {
             throw new IllegalArgumentException((currentCardinal - 1) + "기 이하 회원은 수료증을 업로드해 주세요.");
         }

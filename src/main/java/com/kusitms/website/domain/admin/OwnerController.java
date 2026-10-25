@@ -35,7 +35,7 @@ public class OwnerController {
 
     // 전체 회원의 YB/OB가 한 번에 바뀌는 작업이라 OWNER만 허용한다
     @PutMapping("/current-cardinal")
-    @Operation(summary = "현재 기수 변경", description = "현재 활동 기수를 변경합니다. 변경 즉시 전체 회원의 YB/OB를 기수 기준으로 다시 계산합니다. (가입 기수 >= 현재 기수: YB, 그 외: OB)")
+    @Operation(summary = "현재 기수 변경", description = "현재 활동 기수를 변경합니다. 다음 기수(+1) 또는 직전 기수(-1, 되돌리기)로만 변경할 수 있고, 같은 값은 변경 없이 성공합니다. 변경 즉시 전체 회원의 YB/OB를 기수 기준으로 다시 계산합니다. (가입 기수 >= 현재 기수: YB, 그 외: OB)")
     public ResponseEntity<BaseResponse<CurrentCardinalUpdateResponse>> updateCurrentCardinal(
             @RequestBody CurrentCardinalUpdateRequest request
     ) {
