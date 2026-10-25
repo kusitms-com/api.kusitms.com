@@ -23,3 +23,9 @@
 ## 관련 repository
 [큐시즘 공식 홈페이지 프론트엔드](https://github.com/kusitms-com/kusitms.com)
 
+## 개발 문서
+
+- [개발 컨벤션](docs/development-convention.md)
+- [코드 리뷰 컨벤션](docs/code-review.md)
+- [어드민 인증 및 인가](docs/admin-authorization.md)
+
