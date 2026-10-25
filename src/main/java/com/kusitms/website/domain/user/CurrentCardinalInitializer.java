@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 현재 기수 행이 없을 때만 member.initial-cardinal 값으로 생성한다. (최초 배포/빈 DB용)
- * 이후 기수 변경은 어드민 API(PUT /admin/current-cardinal)로 한다.
+ * 이후 기수 변경은 OWNER 전용 API(PUT /admin/owner/current-cardinal)로 한다.
  */
 @Slf4j
 @Component

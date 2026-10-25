@@ -41,6 +41,7 @@ class CardinalTransitionTest {
 
     @MockBean S3Service s3Service;
 
+    Member owner;
     Member manager;
     Member yb33;
     Member yb34;
@@ -50,6 +51,7 @@ class CardinalTransitionTest {
     @BeforeEach
     void setUp() {
         // 기동 시 CurrentCardinalInitializer가 기본값 33으로 현재 기수 행을 만든다
+        owner = save("owner", 30, MemberStatus.APPROVED, MemberRole.OB, MemberAuthority.OWNER);
         manager = save("manager", 34, MemberStatus.APPROVED, MemberRole.YB, MemberAuthority.MANAGER);
         yb33 = save("yb33", 33, MemberStatus.APPROVED, MemberRole.YB, MemberAuthority.MEMBER);
         yb34 = save("yb34", 34, MemberStatus.PENDING, MemberRole.YB, MemberAuthority.MEMBER);
@@ -65,7 +67,7 @@ class CardinalTransitionTest {
         mockMvc.perform(get("/api/auth/current-cardinal"))
                 .andExpect(jsonPath("$.data.currentCardinal").value(33));
 
-        mockMvc.perform(auth(put("/admin/current-cardinal"), manager)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":34}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.previousCardinal").value(33))
@@ -85,10 +87,10 @@ class CardinalTransitionTest {
     @Test
     @DisplayName("기수를 되돌리면 해당 기수 회원이 다시 YB가 된다")
     void rollbackCurrentCardinal() throws Exception {
-        mockMvc.perform(auth(put("/admin/current-cardinal"), manager)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":34}"))
                 .andExpect(status().isOk());
-        mockMvc.perform(auth(put("/admin/current-cardinal"), manager)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":33}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.changedToYb").value(1));
@@ -97,15 +99,18 @@ class CardinalTransitionTest {
     }
 
     @Test
-    @DisplayName("기수 변경은 운영진 이상만 가능하고, 잘못된 기수는 400")
+    @DisplayName("기수 변경은 OWNER만 가능하고(학회원·운영진 403), 잘못된 기수는 400")
     void authorizationAndValidation() throws Exception {
-        mockMvc.perform(auth(put("/admin/current-cardinal"), yb33)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), yb33)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":34}"))
                 .andExpect(status().isForbidden());
-        mockMvc.perform(auth(put("/admin/current-cardinal"), manager)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), manager)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":34}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":0}"))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(auth(put("/admin/current-cardinal"), manager)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
     }
@@ -116,7 +121,7 @@ class CardinalTransitionTest {
         // 현재 33기: 33기 가입자는 수료증 없이 가입 가능
         assertThat(memberService.signup(signUpRequest("new33", 33), profileImage(), null)).isNotNull();
 
-        mockMvc.perform(auth(put("/admin/current-cardinal"), manager)
+        mockMvc.perform(auth(put("/admin/owner/current-cardinal"), owner)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"cardinal\":34}"))
                 .andExpect(status().isOk());
 

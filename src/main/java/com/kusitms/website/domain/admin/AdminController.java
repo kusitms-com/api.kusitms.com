@@ -1,8 +1,6 @@
 package com.kusitms.website.domain.admin;
 
-import com.kusitms.website.domain.admin.dto.request.CurrentCardinalUpdateRequest;
 import com.kusitms.website.domain.admin.dto.response.AdminMemberResponse;
-import com.kusitms.website.domain.admin.dto.response.CurrentCardinalUpdateResponse;
 import com.kusitms.website.domain.admin.dto.response.PendingMemberResponse;
 import com.kusitms.website.domain.introduction.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
@@ -35,7 +33,6 @@ public class AdminController {
     private final IntroService introService;
     private final AdminService adminService;
     private final MemberAdminService memberAdminService;
-    private final CardinalAdminService cardinalAdminService;
 
     @GetMapping("/admin/introductions")
     @Operation(summary = "학회 소개 정보 조회", description = "학회 소개 페이지의 현재 저장된 정보를 조회합니다.")
@@ -256,18 +253,6 @@ public class AdminController {
     public ResponseEntity<BaseResponse> deleteBlogReview(@PathVariable("id") Long blogReviewId) {
         adminService.deleteBlogReview(blogReviewId);
         return ResponseEntity.ok(new BaseResponse());
-    }
-
-    @PutMapping("/admin/current-cardinal")
-    @Operation(summary = "현재 기수 변경", description = "현재 활동 기수를 변경합니다. 변경 즉시 전체 회원의 YB/OB를 기수 기준으로 다시 계산합니다. (가입 기수 >= 현재 기수: YB, 그 외: OB)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "변경 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 기수", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
-    })
-    public ResponseEntity<BaseResponse<CurrentCardinalUpdateResponse>> updateCurrentCardinal(
-            @RequestBody CurrentCardinalUpdateRequest request
-    ) {
-        return ResponseEntity.ok(new BaseResponse<>(cardinalAdminService.updateCurrentCardinal(request.getCardinal())));
     }
 
     @GetMapping("/admin/members")
