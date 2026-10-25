@@ -8,9 +8,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import javax.persistence.EntityNotFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -29,7 +33,8 @@ public class GlobalExceptionHandler {
     }
 
     // enum 쿼리/바디 파싱 실패 등이 RuntimeException 핸들러에 잡혀 500이 되지 않도록 400으로 처리한다.
-    @ExceptionHandler({MethodArgumentTypeMismatchException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, HttpMessageNotReadableException.class,
+            BindException.class, MethodArgumentNotValidException.class})
     public ResponseEntity<BaseResponse<BaseException>> handleBadRequest(Exception ex) {
         return ResponseEntity.badRequest()
                 .body(BaseResponse.error(BaseExceptionStatus.BAD_REQUEST));
@@ -41,6 +46,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(BaseResponse.error(BaseExceptionStatus.FORBIDDEN));
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<BaseResponse<BaseException>> handleEntityNotFound(EntityNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.error(BaseExceptionStatus.NOT_FOUND, ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)

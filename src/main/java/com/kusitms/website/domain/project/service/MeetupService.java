@@ -1,6 +1,6 @@
 package com.kusitms.website.domain.project.service;
 
-import com.kusitms.website.domain.project.MeetupRepository;
+import com.kusitms.website.domain.project.repository.MeetupRepository;
 import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
 import com.kusitms.website.domain.project.dto.response.MeetupResponse;
 import com.kusitms.website.domain.project.entity.MeetupProject;

@@ -1,10 +1,10 @@
 package com.kusitms.website.domain.project.service;
 
-import com.kusitms.website.domain.project.TagRepository;
+import com.kusitms.website.domain.project.repository.TagRepository;
 import com.kusitms.website.domain.project.entity.CorporateProject;
 import com.kusitms.website.domain.project.dto.response.CorporateDetailResponse;
 import com.kusitms.website.domain.project.dto.response.CorporateResponse;
-import com.kusitms.website.domain.project.CorporateRepository;
+import com.kusitms.website.domain.project.repository.CorporateRepository;
 import com.kusitms.website.domain.project.entity.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
