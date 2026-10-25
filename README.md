@@ -28,4 +28,5 @@
 - [개발 컨벤션](docs/development-convention.md)
 - [코드 리뷰 컨벤션](docs/code-review.md)
 - [어드민 인증 및 인가](docs/admin-authorization.md)
+- [소개 페이지 데이터 전환 가이드](docs/introduction-data-transition.md)
 
