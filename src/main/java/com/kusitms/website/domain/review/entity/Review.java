@@ -2,6 +2,7 @@ package com.kusitms.website.domain.review.entity;
 
 import com.kusitms.website.domain.project.entity.Team;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,4 +27,19 @@ public class Review {
 
     @Column(nullable = false, length = 300)
     private String review;
+
+    @Builder
+    public Review(String name, Integer cardinal, Team team, String review) {
+        this.name = name;
+        this.cardinal = cardinal;
+        this.team = team;
+        this.review = review;
+    }
+
+    public void update(String name, Integer cardinal, Team team, String review) {
+        this.name = name;
+        this.cardinal = cardinal;
+        this.team = team;
+        this.review = review;
+    }
 }
