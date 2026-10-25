@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
 
@@ -37,8 +38,7 @@ public class IntroService {
 
     @Transactional(readOnly = true)
     public IntroResponse getIntroduction() {
-        Introduction intro = introRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("학회 소개 정보가 존재하지 않습니다."));
+        Introduction intro = getIntroductionEntity();
 
         List<ManagementTeamResponse> managementTeamResponses = intro.getManageTeam().stream()
                 .map(ManagementTeamResponse::fromEntity)
@@ -75,8 +75,7 @@ public class IntroService {
 
     @Transactional(readOnly = true)
     public AdminIntroResponse getAdminIntroduction() {
-        Introduction intro = introRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("학회 소개 정보가 존재하지 않습니다."));
+        Introduction intro = getIntroductionEntity();
 
         List<ManagementTeamResponse> teams = intro.getManageTeam().stream()
                 .map(ManagementTeamResponse::fromEntity)
@@ -111,7 +110,18 @@ public class IntroService {
     }
 
     @Transactional
-    public void save(IntroRequest request) {
+    public void saveOrUpdate(IntroRequest request) {
+        Optional<Introduction> introduction = introRepository.findFirstByOrderByIntroductionIdAsc();
+
+        if (introduction.isPresent()) {
+            updateIntroduction(request, introduction.get());
+            return;
+        }
+
+        saveIntroduction(request);
+    }
+
+    private void saveIntroduction(IntroRequest request) {
         String bannerImageUrl = uploadIfPresent(request.getBannerImageFile());
         String planningImageUrl = uploadIfPresent(request.getPlanningImage());
         String designImageUrl = uploadIfPresent(request.getDesignImage());
@@ -131,11 +141,7 @@ public class IntroService {
         saveSponsors(request.getSponsors(), introduction);
     }
 
-    @Transactional
-    public void updateIntroduction(IntroRequest request) {
-        Introduction introduction = introRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("학회 소개 정보가 존재하지 않습니다."));
-
+    private void updateIntroduction(IntroRequest request, Introduction introduction) {
         String bannerImageUrl = uploadOrKeep(request.getBannerImageFile(), introduction.getBannerImageUrl());
         String planningImageUrl = uploadOrKeep(request.getPlanningImage(), introduction.getPlanningImageUrl());
         String designImageUrl = uploadOrKeep(request.getDesignImage(), introduction.getDesignImageUrl());
@@ -158,21 +164,60 @@ public class IntroService {
 
         introRepository.save(introduction);
 
-        manageTeamRepository.deleteByIntroduction(introduction);
-        expertLectureRepository.deleteByIntroduction(introduction);
-        obLectureRepository.deleteByIntroduction(introduction);
-        partnerLogoRepository.deleteByIntroduction(introduction);
-        introMeetupImageRepository.deleteByIntroduction(introduction);
-        activityRepository.deleteByIntroduction(introduction);
-        sponsorRepository.deleteByIntroduction(introduction);
+        replaceManageTeams(request, introduction);
+        replaceExpertLectures(request, introduction);
+        replaceOBLectures(request, introduction);
+        replacePartnerLogos(request.getPartnerLogoFiles(), introduction);
+        replaceMeetupImages(request.getMeetupImages(), introduction);
+        replaceActivities(request.getActivities(), introduction);
+        replaceSponsors(request.getSponsors(), introduction);
+    }
 
+    private Introduction getIntroductionEntity() {
+        return introRepository.findFirstByOrderByIntroductionIdAsc()
+                .orElseThrow(() -> new EntityNotFoundException("학회 소개 정보가 존재하지 않습니다."));
+    }
+
+    private void replaceManageTeams(IntroRequest request, Introduction introduction) {
+        if (request.getTeams() == null) return;
+        manageTeamRepository.deleteByIntroduction(introduction);
         saveManageTeams(request, introduction);
+    }
+
+    private void replaceExpertLectures(IntroRequest request, Introduction introduction) {
+        if (request.getExpertLecture() == null) return;
+        expertLectureRepository.deleteByIntroduction(introduction);
         saveExpertLectures(request, introduction);
+    }
+
+    private void replaceOBLectures(IntroRequest request, Introduction introduction) {
+        if (request.getObLecture() == null) return;
+        obLectureRepository.deleteByIntroduction(introduction);
         saveOBLectures(request, introduction);
-        savePartnerLogos(request.getPartnerLogoFiles(), introduction);
-        saveMeetupImages(request.getMeetupImages(), introduction);
-        saveActivities(request.getActivities(), introduction);
-        saveSponsors(request.getSponsors(), introduction);
+    }
+
+    private void replacePartnerLogos(List<MultipartFile> files, Introduction introduction) {
+        if (files == null) return;
+        partnerLogoRepository.deleteByIntroduction(introduction);
+        savePartnerLogos(files, introduction);
+    }
+
+    private void replaceMeetupImages(List<MultipartFile> files, Introduction introduction) {
+        if (files == null) return;
+        introMeetupImageRepository.deleteByIntroduction(introduction);
+        saveMeetupImages(files, introduction);
+    }
+
+    private void replaceActivities(List<ActivityRequest> activities, Introduction introduction) {
+        if (activities == null) return;
+        activityRepository.deleteByIntroduction(introduction);
+        saveActivities(activities, introduction);
+    }
+
+    private void replaceSponsors(List<MultipartFile> files, Introduction introduction) {
+        if (files == null) return;
+        sponsorRepository.deleteByIntroduction(introduction);
+        saveSponsors(files, introduction);
     }
 
     private void saveManageTeams(IntroRequest request, Introduction introduction) {

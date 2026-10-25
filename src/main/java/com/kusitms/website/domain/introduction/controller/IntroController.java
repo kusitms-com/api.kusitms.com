@@ -25,9 +25,11 @@ public class IntroController {
     @Operation(summary = "학회 소개 페이지 정보 조회", description = "학회 소개 페이지의 정보를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = IntroResponse.class)))
+                    content = @Content(schema = @Schema(implementation = IntroResponse.class))),
+            @ApiResponse(responseCode = "404", description = "소개 정보 없음",
+                    content = @Content(schema = @Schema(implementation = BaseResponse.class)))
     })
-    public ResponseEntity<BaseResponse> getIntroduction() {
-        return ResponseEntity.ok(new BaseResponse(introService.getIntroduction()));
+    public ResponseEntity<BaseResponse<IntroResponse>> getIntroduction() {
+        return ResponseEntity.ok(new BaseResponse<>(introService.getIntroduction()));
     }
 }

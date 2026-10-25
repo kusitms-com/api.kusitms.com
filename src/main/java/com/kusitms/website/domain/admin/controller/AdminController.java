@@ -6,13 +6,13 @@ import com.kusitms.website.domain.admin.service.AdminService;
 import com.kusitms.website.domain.admin.service.MemberAdminService;
 import com.kusitms.website.domain.introduction.service.IntroService;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
+import com.kusitms.website.domain.introduction.dto.response.AdminIntroResponse;
 import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
 import com.kusitms.website.domain.project.dto.request.CorporateRequest;
 import com.kusitms.website.domain.project.dto.request.MeetupRequest;
 import com.kusitms.website.domain.review.dto.request.ReviewRequest;
 import com.kusitms.website.domain.user.entity.MemberStatus;
 import com.kusitms.website.global.common.BaseResponse;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,28 +41,21 @@ public class AdminController {
     @Operation(summary = "학회 소개 정보 조회", description = "학회 소개 페이지의 현재 저장된 정보를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+            @ApiResponse(responseCode = "404", description = "소개 정보 없음", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
     })
-    public ResponseEntity<BaseResponse> getIntroduction() {
-        return ResponseEntity.ok(new BaseResponse(introService.getAdminIntroduction()));
-    }
-
-    @Hidden
-    @PostMapping(value = "/admin/introductions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BaseResponse> addIntroduction(@ModelAttribute IntroRequest request) {
-        introService.save(request);
-        return ResponseEntity.ok(new BaseResponse());
+    public ResponseEntity<BaseResponse<AdminIntroResponse>> getIntroduction() {
+        return ResponseEntity.ok(new BaseResponse<>(introService.getAdminIntroduction()));
     }
 
     @PutMapping(value = "/admin/introductions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "학회 소개 정보 수정", description = "학회 소개 페이지의 정보를 수정합니다.")
+    @Operation(summary = "학회 소개 정보 등록 또는 수정", description = "소개 정보가 없으면 등록하고, 있으면 수정합니다. 수정할 때 파일과 하위 목록을 생략하면 기존 값을 유지합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "수정 성공"),
-            @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
+            @ApiResponse(responseCode = "200", description = "등록 또는 수정 성공"),
+            @ApiResponse(responseCode = "400", description = "필수 값 누락 또는 잘못된 요청", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
     })
-    public ResponseEntity<BaseResponse> updateIntroduction(@ModelAttribute IntroRequest request) {
-        introService.updateIntroduction(request);
-        return ResponseEntity.ok(new BaseResponse());
+    public ResponseEntity<BaseResponse<Void>> updateIntroduction(@Valid @ModelAttribute IntroRequest request) {
+        introService.saveOrUpdate(request);
+        return ResponseEntity.ok(new BaseResponse<>());
     }
 
     @PostMapping(value = "/admin/projects/corporate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

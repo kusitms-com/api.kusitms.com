@@ -8,6 +8,7 @@ public enum BaseExceptionStatus {
     SUCCESS(HttpStatus.OK, 200, "요청 성공"),
     INTER_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 500, "INTER SERVER ERROR"),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, 400, "잘못된 요청입니다."),
+    NOT_FOUND(HttpStatus.NOT_FOUND, 404, "요청한 리소스를 찾을 수 없습니다."),
     NOT_SUPPORT_FILE(HttpStatus.BAD_REQUEST, 4001, "지원하지 않는 파일 형식입니다"),
     FILE_UPLOAD_FAIL(HttpStatus.BAD_REQUEST, 4002, "파일 업로드 실패"),
 
