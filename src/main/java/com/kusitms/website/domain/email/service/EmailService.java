@@ -1,6 +1,6 @@
 package com.kusitms.website.domain.email.service;
 
-import com.kusitms.website.domain.email.Email;
+import com.kusitms.website.domain.email.entity.Email;
 import com.kusitms.website.domain.email.dto.response.EmailResponse;
 import com.kusitms.website.domain.email.repository.EmailRepository;
 import lombok.RequiredArgsConstructor;

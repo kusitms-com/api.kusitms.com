@@ -1,6 +1,6 @@
 package com.kusitms.website.domain.mentoring.entity;
 
-import com.kusitms.website.domain.user.Member;
+import com.kusitms.website.domain.user.entity.Member;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;

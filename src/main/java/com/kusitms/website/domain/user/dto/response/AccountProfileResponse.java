@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.user.dto.response;
 
-import com.kusitms.website.domain.user.Member;
-import com.kusitms.website.domain.user.Part;
+import com.kusitms.website.domain.user.entity.Member;
+import com.kusitms.website.domain.user.entity.Part;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;

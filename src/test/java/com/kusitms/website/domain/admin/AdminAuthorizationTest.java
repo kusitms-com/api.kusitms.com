@@ -1,10 +1,12 @@
 package com.kusitms.website.domain.admin;
 
-import com.kusitms.website.domain.user.Member;
-import com.kusitms.website.domain.user.MemberAuthority;
-import com.kusitms.website.domain.user.MemberRepository;
-import com.kusitms.website.domain.user.MemberRole;
-import com.kusitms.website.domain.user.MemberStatus;
+import com.kusitms.website.domain.admin.service.AdminAuthorityInitializer;
+import com.kusitms.website.domain.admin.service.MemberAuthorityService;
+import com.kusitms.website.domain.user.entity.Member;
+import com.kusitms.website.domain.user.entity.MemberAuthority;
+import com.kusitms.website.domain.user.repository.MemberRepository;
+import com.kusitms.website.domain.user.entity.MemberRole;
+import com.kusitms.website.domain.user.entity.MemberStatus;
 import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
