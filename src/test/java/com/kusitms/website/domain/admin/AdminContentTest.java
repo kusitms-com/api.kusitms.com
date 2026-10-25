@@ -118,6 +118,20 @@ class AdminContentTest {
         assertThat(updated.getTags()).extracting("name").containsExactlyInAnyOrder("앱", "AI");
         assertThat(tagRepository.findAll()).extracting("name").containsExactlyInAnyOrder("웹", "앱", "AI");
 
+        // tag 없이 수정: 기존 태그와 분류 유지 (기존 FE는 tag를 보내지 않음)
+        mockMvc.perform(auth(multipart("/admin/projects/corporate").with(asPut())
+                        .param("corporateId", saved.getCorporateId().toString())
+                        .param("cardinal", "34")
+                        .param("name", "큐시즘3")
+                        .param("content", "태그 미입력")))
+                .andExpect(status().isOk());
+        flushAndClear();
+
+        CorporateProject keptTags = corporateRepository.findById(saved.getCorporateId()).orElseThrow();
+        assertThat(keptTags.getName()).isEqualTo("큐시즘3");
+        assertThat(keptTags.getTags()).extracting("name").containsExactlyInAnyOrder("앱", "AI");
+        assertThat(keptTags.getCategory()).isEqualTo("앱#AI");
+
         mockMvc.perform(auth(delete("/admin/projects/corporate/" + saved.getCorporateId())))
                 .andExpect(status().isOk());
         flushAndClear();
@@ -166,6 +180,15 @@ class AdminContentTest {
         mockMvc.perform(auth(get("/admin/meetup/" + saved.getMeetupId())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.tags[0]").value("#앱"));
+
+        // tag 없이 수정: 기존 태그 유지 (기존 FE는 tag를 보내지 않음)
+        mockMvc.perform(auth(meetupRequest(multipart("/admin/projects/meetup")).with(asPut())
+                        .param("meetupId", saved.getMeetupId().toString())
+                        .param("designer", "최디자인")))
+                .andExpect(status().isOk());
+        flushAndClear();
+        assertThat(meetupRepository.findById(saved.getMeetupId()).orElseThrow().getTags())
+                .extracting("name").containsExactly("앱");
 
         mockMvc.perform(auth(delete("/admin/projects/meetup/" + saved.getMeetupId())))
                 .andExpect(status().isOk());

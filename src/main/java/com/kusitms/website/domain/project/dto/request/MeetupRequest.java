@@ -55,8 +55,8 @@ public class MeetupRequest {
     @Schema(description = "팀명", example = "오텐션")
     private String teamName;
 
-    @Schema(description = "태그")
-    private List<String> tag = new ArrayList<>();
+    @Schema(description = "태그 (수정 시 미입력이면 기존 태그 유지)")
+    private List<String> tag;
 
     @Schema(description = "기획자 팀원")
     private List<String> planner = new ArrayList<>();

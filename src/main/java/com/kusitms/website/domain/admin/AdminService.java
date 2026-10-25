@@ -176,7 +176,10 @@ public class AdminService {
 
         meetup.clearTeam();
         addTeamMembers(meetup, request);
-        meetup.updateTags(resolveTags(request.getTag()));
+        // 기존 FE는 tag를 보내지 않으므로, 미입력이면 공개 사이트 태그를 유지한다
+        if (request.getTag() != null) {
+            meetup.updateTags(resolveTags(request.getTag()));
+        }
     }
 
     @Transactional
@@ -223,14 +226,20 @@ public class AdminService {
         String logoUrl = uploadOrKeep(request.getLogoFile(), corporate.getLogoUrl(), "corporate");
         String bannerUrl = uploadOrKeep(request.getBannerFile(), corporate.getBannerUrl(), "corporate");
 
-        Set<Tag> tags = resolveTags(request.getTag());
+        // tag 미입력이면 기존 태그와 분류를 유지한다
+        String category = corporate.getCategory();
+        if (request.getTag() != null) {
+            Set<Tag> tags = resolveTags(request.getTag());
+            category = joinCategory(tags);
+            corporate.updateTags(tags);
+        }
+
         corporate.update(request.getCardinal(),
                 request.getName(),
                 request.getContent(),
                 logoUrl,
                 bannerUrl,
-                joinCategory(tags));
-        corporate.updateTags(tags);
+                category);
     }
 
     @Transactional

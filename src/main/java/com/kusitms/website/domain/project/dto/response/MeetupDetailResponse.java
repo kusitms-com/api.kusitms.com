@@ -107,7 +107,7 @@ public class MeetupDetailResponse {
         this.appUrl = meetup.getAppUrl();
 
         if(isDetail) {
-            this.type = meetup.getType().getName();
+            this.type = meetup.getType() == null ? null : meetup.getType().getName();
             this.intro = meetup.getIntro();
             this.startDate = meetup.getStartDate();
             this.endDate = meetup.getEndDate();

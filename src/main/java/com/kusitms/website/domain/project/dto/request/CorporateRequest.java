@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -25,8 +24,8 @@ public class CorporateRequest {
     @Schema(description = "주제 한 줄 소개", example = "큐시즘 관리자 페이지 만들기")
     private String content;
 
-    @Schema(description = "태그")
-    private List<String> tag = new ArrayList<>();
+    @Schema(description = "태그 (수정 시 미입력이면 기존 태그 유지)")
+    private List<String> tag;
 
     @Schema(description = "로고 이미지 파일")
     private MultipartFile logoFile;
