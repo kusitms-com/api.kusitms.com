@@ -8,6 +8,6 @@ import lombok.Getter;
 @AllArgsConstructor
 @Schema(description = "현재 기수 응답")
 public class CurrentCardinalResponse {
-    @Schema(description = "현재 활동 기수")
+    @Schema(description = "현재 활동 기수. 이 기수 이상이면 YB, 미만이면 OB", example = "34")
     private Integer currentCardinal;
 }
