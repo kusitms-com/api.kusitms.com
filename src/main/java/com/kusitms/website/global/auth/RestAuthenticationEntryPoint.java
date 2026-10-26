@@ -47,7 +47,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         JSONObject responseJson = new JSONObject();
-        responseJson.put("timestamp", LocalDateTime.now());
+        responseJson.put("timestamp", LocalDateTime.now().toString());
         responseJson.put("error", exceptionCode.getHttpStatus().toString());
         responseJson.put("message", exceptionCode.getMessage());
         responseJson.put("code", exceptionCode.getCode());

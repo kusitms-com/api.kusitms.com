@@ -1,5 +1,7 @@
 package com.kusitms.website.domain.admin;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kusitms.website.domain.user.Member;
 import com.kusitms.website.domain.user.MemberAuthority;
 import com.kusitms.website.domain.user.MemberRepository;
@@ -17,6 +19,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -122,6 +126,26 @@ class AdminAuthorizationTest {
     void memberAndPublicApi() throws Exception {
         mockMvc.perform(get("/api/mypage/account")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/auth/current-cardinal")).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("401/403 에러 응답 본문은 유효한 JSON이다")
+    void authErrorResponsesAreValidJson() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String unauthorized = mockMvc.perform(get("/admin/review"))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode unauthorizedJson = objectMapper.readTree(unauthorized);
+        assertThat(unauthorizedJson.get("code").asInt()).isEqualTo(401);
+        assertThat(unauthorizedJson.get("timestamp").isTextual()).isTrue();
+
+        String forbidden = mockMvc.perform(auth(get("/admin/review"), yb))
+                .andExpect(status().isForbidden())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode forbiddenJson = objectMapper.readTree(forbidden);
+        assertThat(forbiddenJson.get("code").asInt()).isEqualTo(403);
+        assertThat(forbiddenJson.get("timestamp").isTextual()).isTrue();
     }
 
     @Test
