@@ -54,7 +54,6 @@ jobs:
       - name: Make application-test.properties
         run: |
           cd ./src/test/resources
-          touch ./application-test.yml
           echo "${{ secrets.PROPERTIES_TEST }}" > ./application-test.properties
         shell: bash
 
