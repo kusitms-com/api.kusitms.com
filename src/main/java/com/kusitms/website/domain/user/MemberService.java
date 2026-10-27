@@ -3,6 +3,7 @@ package com.kusitms.website.domain.user;
 import com.kusitms.website.domain.file.S3Service;
 import com.kusitms.website.domain.user.dto.request.SignInRequest;
 import com.kusitms.website.domain.user.dto.request.SignUpRequest;
+import com.kusitms.website.domain.user.dto.response.CheckIdResponse;
 import com.kusitms.website.domain.user.dto.response.CurrentCardinalResponse;
 import com.kusitms.website.domain.user.dto.response.SignInResponse;
 import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
@@ -16,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
@@ -109,13 +109,13 @@ public class MemberService {
         return new SignInResponse(accessToken, refreshToken, role, member.getAuthority(), redirectPath);
     }
 
-    public Map<String, Object> checkIdDuplicate(String id) {
+    public CheckIdResponse checkIdDuplicate(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("아이디를 먼저 입력해 주세요.");
         }
         boolean isDuplicate = memberRepository.existsById(id);
         String message = isDuplicate ? "이미 사용 중인 아이디입니다." : "사용 가능한 아이디입니다.";
-        return Map.of("available", !isDuplicate, "message", message);
+        return new CheckIdResponse(!isDuplicate, message);
     }
 
     @Transactional
