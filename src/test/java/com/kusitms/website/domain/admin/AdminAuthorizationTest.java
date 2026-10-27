@@ -125,6 +125,28 @@ class AdminAuthorizationTest {
     }
 
     @Test
+    @DisplayName("가입 승인 도입 전 회원(status=null)은 승인된 회원으로 취급한다")
+    void legacyNullStatusMemberIsActive() throws Exception {
+        Member legacyManager = save("legacy-null", 30, null, MemberRole.OB, MemberAuthority.MANAGER);
+        Member legacyMember = save("legacy-null-yb", 34, null, MemberRole.YB, MemberAuthority.MEMBER);
+
+        mockMvc.perform(auth(get("/admin/review"), legacyManager)).andExpect(status().isOk());
+        mockMvc.perform(auth(post("/admin/members/" + yb.getUserId() + "/approve"), legacyManager))
+                .andExpect(status().isBadRequest()); // 인증/인가는 통과, 대상이 PENDING이 아니라 400
+
+        memberAuthorityService.changeAuthority(owner.getUserId(), legacyMember.getUserId(), MemberAuthority.MANAGER);
+        assertThat(legacyMember.getAuthority()).isEqualTo(MemberAuthority.MANAGER);
+    }
+
+    @Test
+    @DisplayName("승인 대기 회원의 토큰은 401")
+    void pendingMemberTokenRejected() throws Exception {
+        Member pending = save("pending-token", 34, MemberStatus.PENDING, MemberRole.YB, MemberAuthority.MANAGER);
+
+        mockMvc.perform(auth(get("/admin/review"), pending)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("탈퇴한 회원의 토큰은 만료 전이라도 401")
     void withdrawnMemberTokenRejected() throws Exception {
         String token = jwtTokenProvider.makeJwtToken(manager.getUserId());

@@ -120,6 +120,14 @@ public class Member {
         this.status = MemberStatus.WITHDRAWN;
     }
 
+    /**
+     * 서비스를 이용할 수 있는 회원인지 여부. 로그인(MemberService.signin)과 같은 기준을 따른다.
+     * 가입 승인 기능 도입 전에 가입한 회원은 status가 null이며, 승인된 회원으로 취급한다.
+     */
+    public boolean isActive() {
+        return status != MemberStatus.PENDING && status != MemberStatus.WITHDRAWN;
+    }
+
     public void approve() {
         this.status = MemberStatus.APPROVED;
     }
