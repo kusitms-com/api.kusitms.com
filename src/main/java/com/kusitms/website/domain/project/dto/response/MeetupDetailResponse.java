@@ -2,7 +2,6 @@ package com.kusitms.website.domain.project.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kusitms.website.domain.admin.entity.TMPMeetupProject;
 import com.kusitms.website.domain.project.entity.MeetupProject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -86,11 +85,20 @@ public class MeetupDetailResponse {
     private List<String> tags;
 
     public MeetupDetailResponse(MeetupProject meetup, boolean isDetail) {
+        this(meetup, isDetail, false);
+    }
+
+    // 어드민은 수정 폼에 그대로 쓰이므로 공개 API용 기수 보정(meetupId 55 → 30) 없이 실제 기수를 내려준다
+    public static MeetupDetailResponse forAdmin(MeetupProject meetup, boolean isDetail) {
+        return new MeetupDetailResponse(meetup, isDetail, true);
+    }
+
+    private MeetupDetailResponse(MeetupProject meetup, boolean isDetail, boolean rawCardinal) {
         this.meetupId = meetup.getMeetupId();
-        this.cardinal = meetup.getMeetupId() == 55 ? 30 : meetup.getCardinal();
+        this.cardinal = !rawCardinal && meetup.getMeetupId() == 55 ? 30 : meetup.getCardinal();
         this.name = meetup.getName();
         this.posterUrl = s3Url + meetup.getPosterUrl();
-        this.webThumbnailUrl = s3Url + meetup.getWebThumbnailUrl();
+        this.webThumbnailUrl = meetup.getWebThumbnailUrl() == null ? null : s3Url + meetup.getWebThumbnailUrl();
         this.logoUrl = s3Url + meetup.getLogoUrl();
         this.oneLineIntro = meetup.getOneLineIntro();
         this.behanceUrl = meetup.getBehanceUrl();
@@ -99,32 +107,11 @@ public class MeetupDetailResponse {
         this.appUrl = meetup.getAppUrl();
 
         if(isDetail) {
-            this.type = meetup.getType().getName();
+            this.type = meetup.getType() == null ? null : meetup.getType().getName();
             this.intro = meetup.getIntro();
             this.startDate = meetup.getStartDate();
             this.endDate = meetup.getEndDate();
             this.team = new MeetupTeamResponse(meetup.getTeam(), meetup.getTeamName());
-        }
-    }
-
-    public MeetupDetailResponse(TMPMeetupProject meetup, boolean isDetail) {
-        this.meetupId = meetup.getMeetupId();
-        this.cardinal = meetup.getCardinal();
-        this.name = meetup.getName();
-        this.posterUrl = s3Url + meetup.getPosterUrl();
-        this.logoUrl = s3Url + meetup.getLogoUrl();
-        this.oneLineIntro = meetup.getOneLineIntro();
-        this.behanceUrl = meetup.getBehanceUrl();
-        this.instagramUrl = meetup.getInstagramUrl();
-        this.githubUrl = meetup.getGithubUrl();
-        this.appUrl = meetup.getAppUrl();
-
-        if(isDetail) {
-            this.type = meetup.getType().getName();
-            this.intro = meetup.getIntro();
-            this.startDate = meetup.getStartDate();
-            this.endDate = meetup.getEndDate();
-            this.team = new MeetupTeamResponse(meetup.getTeamName(), meetup.getTeam());
         }
     }
 }

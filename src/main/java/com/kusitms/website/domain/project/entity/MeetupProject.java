@@ -65,7 +65,7 @@ public class MeetupProject {
     @Column(name = "team_name", nullable = false)
     private String teamName;
 
-    @OneToMany(mappedBy = "meetupProject", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "meetupProject", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MeetupTeam> team = new ArrayList<>();
 
     @Column(name = "display_flag")
@@ -87,7 +87,7 @@ public class MeetupProject {
         this.name = name;
         this.intro = intro;
         this.type = type;
-        this.displayFlag = displayFlag;
+        this.displayFlag = Boolean.TRUE.equals(displayFlag);
         this.oneLineIntro = oneLineIntro;
         this.logoUrl = logoUrl;
         this.posterUrl = posterUrl;
@@ -101,7 +101,32 @@ public class MeetupProject {
         this.teamName = teamName;
     }
 
-    public void updateTeam(List<MeetupTeam> team) {
-        this.team = team;
+    public void update(int cardinal, String name, String intro, ProjectType type, String oneLineIntro,
+                       String logoUrl, String posterUrl, String webThumbnailUrl, String behanceUrl, String instagramUrl,
+                       String githubUrl, String appUrl, LocalDate startDate, LocalDate endDate, String teamName) {
+        this.cardinal = cardinal;
+        this.name = name;
+        this.intro = intro;
+        this.type = type;
+        this.oneLineIntro = oneLineIntro;
+        this.logoUrl = logoUrl;
+        this.posterUrl = posterUrl;
+        this.webThumbnailUrl = webThumbnailUrl;
+        this.behanceUrl = behanceUrl;
+        this.instagramUrl = instagramUrl;
+        this.githubUrl = githubUrl;
+        this.appUrl = appUrl;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.teamName = teamName;
+    }
+
+    public void clearTeam() {
+        this.team.clear();
+    }
+
+    public void updateTags(Set<Tag> tags) {
+        this.tags.clear();
+        this.tags.addAll(tags);
     }
 }
