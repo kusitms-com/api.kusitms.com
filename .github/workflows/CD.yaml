@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/CI.yaml
     secrets: inherit
     permissions:
       contents: read
