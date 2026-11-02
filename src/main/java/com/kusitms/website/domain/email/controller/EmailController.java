@@ -2,7 +2,7 @@ package com.kusitms.website.domain.email.controller;
 
 import com.kusitms.website.domain.email.dto.response.EmailResponse;
 import com.kusitms.website.domain.email.service.EmailService;
-import com.kusitms.website.domain.introduction.IntroService;
+import com.kusitms.website.domain.introduction.service.IntroService;
 import com.kusitms.website.domain.introduction.dto.response.IntroResponse;
 import com.kusitms.website.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,7 +1,7 @@
 package com.kusitms.website.global.auth;
 
-import com.kusitms.website.domain.user.Member;
-import com.kusitms.website.domain.user.MemberRepository;
+import com.kusitms.website.domain.user.entity.Member;
+import com.kusitms.website.domain.user.repository.MemberRepository;
 import org.springframework.security.authentication.DisabledException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

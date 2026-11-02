@@ -1,6 +1,6 @@
 package com.kusitms.website.global.auth;
 
-import com.kusitms.website.domain.user.Member;
+import com.kusitms.website.domain.user.entity.Member;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

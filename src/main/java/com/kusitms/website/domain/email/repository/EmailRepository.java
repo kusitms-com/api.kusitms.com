@@ -1,6 +1,6 @@
 package com.kusitms.website.domain.email.repository;
 
-import com.kusitms.website.domain.email.Email;
+import com.kusitms.website.domain.email.entity.Email;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
