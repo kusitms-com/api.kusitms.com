@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.admin;
 
+import com.kusitms.website.domain.admin.entity.BlogReviewActivity;
 import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
 import com.kusitms.website.domain.file.service.S3Service;
 import com.kusitms.website.domain.project.entity.CorporateProject;
@@ -282,6 +283,32 @@ class AdminContentTest {
 
         assertThat(blogReviewRepository.findById(blogReviewId).orElseThrow().getBlogLink())
                 .isEqualTo("https://blog.example.com/updated");
+    }
+
+    @Test
+    @DisplayName("블로그 후기: 활동 후기와 밋업 프로젝트 분류로 등록할 수 있다")
+    void blogReviewActivity() throws Exception {
+        mockMvc.perform(auth(multipart("/admin/blog-review")
+                        .param("cardinal", "34")
+                        .param("part", "BACKEND")
+                        .param("activity", "ACTIVITY_REVIEW")
+                        .param("title", "활동 후기")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(auth(multipart("/admin/blog-review")
+                        .param("cardinal", "34")
+                        .param("part", "BACKEND")
+                        .param("activity", "MEETUP_PROJECT")
+                        .param("title", "밋업 프로젝트 후기")))
+                .andExpect(status().isOk());
+        flushAndClear();
+
+        assertThat(blogReviewRepository.findAllByOrderByBlogReviewIdDesc())
+                .extracting("activity")
+                .containsExactlyInAnyOrder(
+                        BlogReviewActivity.ACTIVITY_REVIEW,
+                        BlogReviewActivity.MEETUP_PROJECT
+                );
     }
 
     private MockMultipartHttpServletRequestBuilder meetupRequest(MockMultipartHttpServletRequestBuilder request) {

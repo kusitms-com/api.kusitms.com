@@ -21,7 +21,7 @@ public class BlogReviewRequest {
     @Schema(description = "파트", example = "PLANNER, DESIGNER, DEVELOPER")
     private Team part;
 
-    @Schema(description = "활동", example = "DOCUMENT_REVIEW, INTERVIEW_REVIEW, COMPANY_PROJECT")
+    @Schema(description = "활동", example = "ACTIVITY_REVIEW")
     private BlogReviewActivity activity;
 
     @Schema(description = "썸네일 이미지 파일")
