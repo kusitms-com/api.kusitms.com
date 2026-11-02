@@ -27,6 +27,9 @@ public class BlogReviewRequest {
     @Schema(description = "썸네일 이미지 파일")
     private MultipartFile thumbnailFile;
 
+    @Schema(description = "블로그 원문 링크", example = "https://blog.example.com/review")
+    private String blogLink;
+
     @Schema(description = "제목", example = "면접에서 이런 질문이 나왔어요")
     private String title;
 
@@ -39,6 +42,7 @@ public class BlogReviewRequest {
                 .part(request.getPart())
                 .activity(request.getActivity())
                 .thumbnailUrl(thumbnailUrl)
+                .blogLink(request.getBlogLink())
                 .title(request.getTitle())
                 .previewText(request.getPreviewText())
                 .build();

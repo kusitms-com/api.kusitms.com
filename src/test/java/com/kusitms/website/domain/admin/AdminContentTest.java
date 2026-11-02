@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.admin;
 
+import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
 import com.kusitms.website.domain.file.service.S3Service;
 import com.kusitms.website.domain.project.entity.CorporateProject;
 import com.kusitms.website.domain.project.entity.MeetupProject;
@@ -57,6 +58,7 @@ class AdminContentTest {
     @Autowired MeetupTeamRepository meetupTeamRepository;
     @Autowired TagRepository tagRepository;
     @Autowired ReviewRepository reviewRepository;
+    @Autowired TMPBlogReviewRepository blogReviewRepository;
 
     @MockBean S3Service s3Service;
 
@@ -243,6 +245,43 @@ class AdminContentTest {
         mockMvc.perform(auth(delete("/admin/review/" + reviewId))).andExpect(status().isOk());
         flushAndClear();
         assertThat(reviewRepository.findById(reviewId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("블로그 후기: 원문 링크를 등록·조회·수정할 수 있다")
+    void blogReviewLink() throws Exception {
+        mockMvc.perform(auth(multipart("/admin/blog-review")
+                        .param("cardinal", "34")
+                        .param("part", "BACKEND")
+                        .param("activity", "DOCUMENT_REVIEW")
+                        .param("blogLink", "https://blog.example.com/original")
+                        .param("title", "서류 후기")
+                        .param("previewText", "서류 합격 후기입니다.")))
+                .andExpect(status().isOk());
+        flushAndClear();
+
+        Long blogReviewId = blogReviewRepository.findAllByOrderByBlogReviewIdDesc()
+                .get(0)
+                .getBlogReviewId();
+
+        mockMvc.perform(auth(get("/admin/blog-review")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.blog_review_list[0].blogLink")
+                        .value("https://blog.example.com/original"));
+
+        mockMvc.perform(auth(multipart("/admin/blog-review").with(asPut())
+                        .param("blogReviewId", blogReviewId.toString())
+                        .param("cardinal", "34")
+                        .param("part", "BACKEND")
+                        .param("activity", "DOCUMENT_REVIEW")
+                        .param("blogLink", "https://blog.example.com/updated")
+                        .param("title", "수정된 서류 후기")
+                        .param("previewText", "수정된 후기입니다.")))
+                .andExpect(status().isOk());
+        flushAndClear();
+
+        assertThat(blogReviewRepository.findById(blogReviewId).orElseThrow().getBlogLink())
+                .isEqualTo("https://blog.example.com/updated");
     }
 
     private MockMultipartHttpServletRequestBuilder meetupRequest(MockMultipartHttpServletRequestBuilder request) {

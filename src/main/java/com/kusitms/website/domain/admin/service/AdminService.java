@@ -86,6 +86,7 @@ public class AdminService {
                 request.getPart(),
                 request.getActivity(),
                 thumbnailUrl,
+                request.getBlogLink(),
                 request.getTitle(),
                 request.getPreviewText()
         );
