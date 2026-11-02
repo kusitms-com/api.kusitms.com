@@ -2,10 +2,9 @@ package com.kusitms.website.domain.admin.service;
 
 import com.kusitms.website.domain.user.entity.Member;
 import com.kusitms.website.domain.user.entity.MemberAuthority;
-import com.kusitms.website.domain.user.repository.MemberRepository;
 import com.kusitms.website.domain.user.entity.MemberRole;
+import com.kusitms.website.domain.user.repository.MemberRepository;
 import com.kusitms.website.domain.user.service.MemberService;
-import com.kusitms.website.domain.user.entity.MemberStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +49,7 @@ public class AdminAuthorityInitializer implements ApplicationRunner {
             return;
         }
         for (Member member : memberRepository.findAllByIdIn(ownerIds)) {
-            if (member.getStatus() != MemberStatus.APPROVED) {
+            if (!member.isActive()) {
                 log.warn("OWNER 지정 실패 (승인되지 않은 회원): id={}", member.getId());
                 continue;
             }

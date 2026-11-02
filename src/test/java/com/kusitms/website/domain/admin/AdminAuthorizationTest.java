@@ -1,12 +1,14 @@
 package com.kusitms.website.domain.admin;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kusitms.website.domain.admin.service.AdminAuthorityInitializer;
 import com.kusitms.website.domain.admin.service.MemberAuthorityService;
 import com.kusitms.website.domain.user.entity.Member;
 import com.kusitms.website.domain.user.entity.MemberAuthority;
-import com.kusitms.website.domain.user.repository.MemberRepository;
 import com.kusitms.website.domain.user.entity.MemberRole;
 import com.kusitms.website.domain.user.entity.MemberStatus;
+import com.kusitms.website.domain.user.repository.MemberRepository;
 import com.kusitms.website.global.auth.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +21,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -124,6 +128,48 @@ class AdminAuthorizationTest {
     void memberAndPublicApi() throws Exception {
         mockMvc.perform(get("/api/mypage/account")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/auth/current-cardinal")).andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("401/403 에러 응답 본문은 유효한 JSON이다")
+    void authErrorResponsesAreValidJson() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String unauthorized = mockMvc.perform(get("/admin/review"))
+                .andExpect(status().isUnauthorized())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode unauthorizedJson = objectMapper.readTree(unauthorized);
+        assertThat(unauthorizedJson.get("code").asInt()).isEqualTo(401);
+        assertThat(unauthorizedJson.get("timestamp").isTextual()).isTrue();
+
+        String forbidden = mockMvc.perform(auth(get("/admin/review"), yb))
+                .andExpect(status().isForbidden())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        JsonNode forbiddenJson = objectMapper.readTree(forbidden);
+        assertThat(forbiddenJson.get("code").asInt()).isEqualTo(403);
+        assertThat(forbiddenJson.get("timestamp").isTextual()).isTrue();
+    }
+
+    @Test
+    @DisplayName("가입 승인 도입 전 회원(status=null)은 승인된 회원으로 취급한다")
+    void legacyNullStatusMemberIsActive() throws Exception {
+        Member legacyManager = save("legacy-null", 30, null, MemberRole.OB, MemberAuthority.MANAGER);
+        Member legacyMember = save("legacy-null-yb", 34, null, MemberRole.YB, MemberAuthority.MEMBER);
+
+        mockMvc.perform(auth(get("/admin/review"), legacyManager)).andExpect(status().isOk());
+        mockMvc.perform(auth(post("/admin/members/" + yb.getUserId() + "/approve"), legacyManager))
+                .andExpect(status().isBadRequest()); // 인증/인가는 통과, 대상이 PENDING이 아니라 400
+
+        memberAuthorityService.changeAuthority(owner.getUserId(), legacyMember.getUserId(), MemberAuthority.MANAGER);
+        assertThat(legacyMember.getAuthority()).isEqualTo(MemberAuthority.MANAGER);
+    }
+
+    @Test
+    @DisplayName("승인 대기 회원의 토큰은 401")
+    void pendingMemberTokenRejected() throws Exception {
+        Member pending = save("pending-token", 34, MemberStatus.PENDING, MemberRole.YB, MemberAuthority.MANAGER);
+
+        mockMvc.perform(auth(get("/admin/review"), pending)).andExpect(status().isUnauthorized());
     }
 
     @Test

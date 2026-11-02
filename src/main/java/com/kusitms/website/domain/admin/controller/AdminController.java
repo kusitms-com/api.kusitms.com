@@ -70,7 +70,7 @@ public class AdminController {
     }
 
     @PutMapping(value = "/admin/projects/corporate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "기업 프로젝트 정보 수정", description = "기업 프로젝트의 정보를 수정합니다.")
+    @Operation(summary = "기업 프로젝트 정보 수정", description = "기업 프로젝트의 정보를 수정합니다. 이미지 파일을 보내지 않으면 기존 이미지를 유지합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -103,7 +103,7 @@ public class AdminController {
     }
 
     @PutMapping(value = "/admin/projects/meetup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "밋업데이 프로젝트 정보 수정", description = "밋업데이 프로젝트의 정보를 수정합니다.")
+    @Operation(summary = "밋업데이 프로젝트 정보 수정", description = "밋업데이 프로젝트의 정보를 수정합니다. 이미지 파일을 보내지 않으면 기존 이미지를 유지하고, 팀원·태그는 요청 값으로 교체합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -158,7 +158,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin/review")
-    @Operation(summary = "리뷰 리스트 (test db)", description = "리뷰의 모든 리스트를 조회합니다.")
+    @Operation(summary = "학회원 후기 리스트", description = "리뷰의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -168,7 +168,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin/meetup")
-    @Operation(summary = "밋업데이 프로젝트 리스트(test db)", description = "밋업데이 프로젝트의 모든 리스트를 조회합니다.")
+    @Operation(summary = "밋업데이 프로젝트 리스트", description = "밋업데이 프로젝트의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -179,7 +179,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin/meetup/{meetup_id}")
-    @Operation(summary = "밋업데이 프로젝트 상세 조회(test db)", description = "밋업데이 프로젝트의 상세 정보를 조회합니다.")
+    @Operation(summary = "밋업데이 프로젝트 상세 조회", description = "밋업데이 프로젝트의 상세 정보를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -189,7 +189,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin/corporate")
-    @Operation(summary = "기업 프로젝트 리스트(test db)", description = "기업 프로젝트의 모든 리스트를 조회합니다.")
+    @Operation(summary = "기업 프로젝트 리스트", description = "기업 프로젝트의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -199,7 +199,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin/corporate/{id}")
-    @Operation(summary = "기업 프로젝트 상세 조회(test db)", description = "기업 프로젝트의 상세 정보를 조회합니다.")
+    @Operation(summary = "기업 프로젝트 상세 조회", description = "기업 프로젝트의 상세 정보를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),

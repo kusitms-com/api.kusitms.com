@@ -1,6 +1,5 @@
 package com.kusitms.website.domain.project.dto.response;
 
-import com.kusitms.website.domain.admin.entity.TMPMeetupTeam;
 import com.kusitms.website.domain.project.entity.MeetupTeam;
 import com.kusitms.website.domain.project.entity.Team;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,14 +30,6 @@ public class MeetupTeamResponse {
     public MeetupTeamResponse(List<MeetupTeam> team, String name) {
         this.name = name;
         for (MeetupTeam t : team) {
-            addMember(t.getTeam(), t.getName());
-        }
-        sortAll();
-    }
-
-    public MeetupTeamResponse(String name, List<TMPMeetupTeam> team) {
-        this.name = name;
-        for (TMPMeetupTeam t : team) {
             addMember(t.getTeam(), t.getName());
         }
         sortAll();

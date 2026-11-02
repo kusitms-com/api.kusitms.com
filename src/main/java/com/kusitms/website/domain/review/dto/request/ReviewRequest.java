@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.review.dto.request;
 
-import com.kusitms.website.domain.admin.entity.TMPReview;
 import com.kusitms.website.domain.project.entity.Team;
+import com.kusitms.website.domain.review.entity.Review;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -23,8 +23,8 @@ public class ReviewRequest {
     @Schema(description = "리뷰 내용", example = "리뷰 내용 입니다.")
     private String review;
 
-    public static TMPReview from(ReviewRequest request) {
-        return TMPReview.builder()
+    public static Review from(ReviewRequest request) {
+        return Review.builder()
                 .name(request.getName())
                 .cardinal(request.getCardinal())
                 .team(request.getTeam())
