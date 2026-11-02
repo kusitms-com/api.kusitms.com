@@ -1,6 +1,6 @@
 package com.kusitms.website.domain.project.dto.request;
 
-import com.kusitms.website.domain.admin.entity.TMPCorporateProject;
+import com.kusitms.website.domain.project.entity.CorporateProject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +24,7 @@ public class CorporateRequest {
     @Schema(description = "주제 한 줄 소개", example = "큐시즘 관리자 페이지 만들기")
     private String content;
 
-    @Schema(description = "태그")
+    @Schema(description = "태그 (수정 시 미입력이면 기존 태그 유지)")
     private List<String> tag;
 
     @Schema(description = "로고 이미지 파일")
@@ -33,9 +33,9 @@ public class CorporateRequest {
     @Schema(description = "배너 이미지 파일")
     private MultipartFile bannerFile;
 
-    public static TMPCorporateProject from(CorporateRequest request, String category,
-                                           String logoUrl, String bannerUrl) {
-        return TMPCorporateProject.builder()
+    public static CorporateProject from(CorporateRequest request, String category,
+                                        String logoUrl, String bannerUrl) {
+        return CorporateProject.builder()
                 .cardinal(request.getCardinal())
                 .name(request.getName())
                 .content(request.getContent())

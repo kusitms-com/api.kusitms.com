@@ -1,6 +1,9 @@
 package com.kusitms.website.domain.project.entity;
 
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -8,6 +11,7 @@ import java.util.Set;
 
 @Entity
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CorporateProject {
     @Id
     @Column(name = "corporate_id", nullable = false)
@@ -36,4 +40,30 @@ public class CorporateProject {
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private Set<Tag> tags = new HashSet<>();
+
+    @Builder
+    public CorporateProject(int cardinal, String name, String content,
+                            String logoUrl, String bannerUrl, String category) {
+        this.cardinal = cardinal;
+        this.name = name;
+        this.content = content;
+        this.logoUrl = logoUrl;
+        this.bannerUrl = bannerUrl;
+        this.category = category;
+    }
+
+    public void update(int cardinal, String name, String content,
+                       String logoUrl, String bannerUrl, String category) {
+        this.cardinal = cardinal;
+        this.name = name;
+        this.content = content;
+        this.logoUrl = logoUrl;
+        this.bannerUrl = bannerUrl;
+        this.category = category;
+    }
+
+    public void updateTags(Set<Tag> tags) {
+        this.tags.clear();
+        this.tags.addAll(tags);
+    }
 }

@@ -3,7 +3,6 @@ package com.kusitms.website.domain.admin;
 import com.kusitms.website.domain.user.Member;
 import com.kusitms.website.domain.user.MemberAuthority;
 import com.kusitms.website.domain.user.MemberRepository;
-import com.kusitms.website.domain.user.MemberStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +30,7 @@ public class MemberAuthorityService {
         Member target = memberRepository.findById(targetUserId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
-        if (target.getStatus() != MemberStatus.APPROVED) {
+        if (!target.isActive()) {
             throw new IllegalArgumentException("가입 승인된 회원에게만 권한을 부여할 수 있습니다.");
         }
         if (target.getAuthority() == newAuthority) {
