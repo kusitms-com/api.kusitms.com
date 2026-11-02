@@ -21,11 +21,14 @@ public class BlogReviewRequest {
     @Schema(description = "파트", example = "PLANNER, DESIGNER, DEVELOPER")
     private Team part;
 
-    @Schema(description = "활동", example = "DOCUMENT_REVIEW, INTERVIEW_REVIEW, COMPANY_PROJECT")
+    @Schema(description = "활동", example = "ACTIVITY_REVIEW")
     private BlogReviewActivity activity;
 
     @Schema(description = "썸네일 이미지 파일")
     private MultipartFile thumbnailFile;
+
+    @Schema(description = "블로그 원문 링크", example = "https://blog.example.com/review")
+    private String blogLink;
 
     @Schema(description = "제목", example = "면접에서 이런 질문이 나왔어요")
     private String title;
@@ -39,6 +42,7 @@ public class BlogReviewRequest {
                 .part(request.getPart())
                 .activity(request.getActivity())
                 .thumbnailUrl(thumbnailUrl)
+                .blogLink(request.getBlogLink())
                 .title(request.getTitle())
                 .previewText(request.getPreviewText())
                 .build();

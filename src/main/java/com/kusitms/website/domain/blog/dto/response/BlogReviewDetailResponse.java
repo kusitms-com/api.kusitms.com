@@ -26,6 +26,9 @@ public class BlogReviewDetailResponse {
     @Schema(description = "썸네일 URL")
     private String thumbnailUrl;
 
+    @Schema(description = "블로그 원문 링크")
+    private String blogLink;
+
     @Schema(description = "제목")
     private String title;
 
@@ -38,6 +41,7 @@ public class BlogReviewDetailResponse {
         this.part = blogReview.getPart() == null ? null : blogReview.getPart().name();
         this.activity = blogReview.getActivity() == null ? null : blogReview.getActivity().name();
         this.thumbnailUrl = blogReview.getThumbnailUrl() == null ? null : s3Url + blogReview.getThumbnailUrl();
+        this.blogLink = blogReview.getBlogLink();
         this.title = blogReview.getTitle();
         this.previewText = blogReview.getPreviewText();
     }

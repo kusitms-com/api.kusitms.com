@@ -28,6 +28,9 @@ public class TMPBlogReview {
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
 
+    @Column(name = "blog_link", length = 2048)
+    private String blogLink;
+
     private String title;
 
     @Column(length = 500)
@@ -35,21 +38,23 @@ public class TMPBlogReview {
 
     @Builder
     public TMPBlogReview(Integer cardinal, Team part, BlogReviewActivity activity,
-                         String thumbnailUrl, String title, String previewText) {
+                         String thumbnailUrl, String blogLink, String title, String previewText) {
         this.cardinal = cardinal;
         this.part = part;
         this.activity = activity;
         this.thumbnailUrl = thumbnailUrl;
+        this.blogLink = blogLink;
         this.title = title;
         this.previewText = previewText;
     }
 
     public void update(Integer cardinal, Team part, BlogReviewActivity activity,
-                       String thumbnailUrl, String title, String previewText) {
+                       String thumbnailUrl, String blogLink, String title, String previewText) {
         this.cardinal = cardinal;
         this.part = part;
         this.activity = activity;
         this.thumbnailUrl = thumbnailUrl;
+        this.blogLink = blogLink;
         this.title = title;
         this.previewText = previewText;
     }
