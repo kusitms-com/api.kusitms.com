@@ -4,9 +4,11 @@ import com.kusitms.website.domain.email.entity.Email;
 import com.kusitms.website.domain.email.dto.response.EmailResponse;
 import com.kusitms.website.domain.email.repository.EmailRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Service
@@ -18,6 +20,7 @@ public class EmailService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
     );
+    private static final String DUPLICATE_MESSAGE = "이미 등록된 이메일입니다.";
 
     @Transactional
     public EmailResponse saveEmail(String email) {
@@ -26,19 +29,27 @@ public class EmailService {
             throw new IllegalArgumentException("이메일은 필수 입력값입니다.");
         }
 
-        if (!EMAIL_PATTERN.matcher(email).matches()) {
+        String normalized = email.trim().toLowerCase(Locale.ROOT);
+
+        if (!EMAIL_PATTERN.matcher(normalized).matches()) {
             throw new IllegalArgumentException("유효하지 않은 이메일 형식입니다.");
         }
 
-        if (emailRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 등록된 이메일입니다.");
+        if (emailRepository.existsByEmailIgnoreCase(normalized)) {
+            throw new IllegalArgumentException(DUPLICATE_MESSAGE);
         }
 
-        Email savedEmail = emailRepository.save(
-                Email.builder()
-                        .email(email)
-                        .build()
-        );
+        Email savedEmail;
+        try {
+            savedEmail = emailRepository.saveAndFlush(
+                    Email.builder()
+                            .email(normalized)
+                            .build()
+            );
+        } catch (DataIntegrityViolationException e) {
+            // 같은 이메일이 동시에 등록되면 unique 제약에서 걸리므로 중복으로 응답한다.
+            throw new IllegalArgumentException(DUPLICATE_MESSAGE);
+        }
 
         return EmailResponse.builder()
                 .id(String.valueOf(savedEmail.getId()))
