@@ -53,13 +53,13 @@ public class AdminIntroResponse {
     @Schema(description = "백엔드 이미지 URL")
     private String backendImageUrl;
 
-    @JsonProperty("partner_logo_urls")
-    @Schema(description = "파트너사 로고 이미지 URL 목록")
-    private List<String> partnerLogoUrls;
+    @JsonProperty("partner_logos")
+    @Schema(description = "파트너사(기업 프로젝트) 로고 목록")
+    private List<IntroImageResponse> partnerLogos;
 
-    @JsonProperty("meetup_image_urls")
-    @Schema(description = "밋업 이미지 URL 목록")
-    private List<String> meetupImageUrls;
+    @JsonProperty("meetup_images")
+    @Schema(description = "밋업 이미지 목록")
+    private List<IntroImageResponse> meetupImages;
 
     @Schema(description = "활동 소개 목록")
     private List<ActivityResponse> activities;
@@ -75,18 +75,17 @@ public class AdminIntroResponse {
     @Schema(description = "OB 초청 강연자 소개")
     private List<OBLectureResponse> obLecture;
 
-    @JsonProperty("sponsor_image_urls")
-    @Schema(description = "후원사 이미지 URL 목록")
-    private List<String> sponsorImageUrls;
+    @Schema(description = "후원사 로고 목록")
+    private List<IntroImageResponse> sponsors;
 
     public static AdminIntroResponse fromEntity(Introduction intro,
-                                                 List<String> partnerLogoUrls,
-                                                 List<String> meetupImageUrls,
+                                                 List<IntroImageResponse> partnerLogos,
+                                                 List<IntroImageResponse> meetupImages,
                                                  List<ActivityResponse> activities,
                                                  List<ManagementTeamResponse> teams,
                                                  List<ExpertLectureResponse> expertLecture,
                                                  List<OBLectureResponse> obLecture,
-                                                 List<String> sponsorImageUrls) {
+                                                 List<IntroImageResponse> sponsors) {
         return AdminIntroResponse.builder()
                 .bannerCardinal(intro.getBannerCardinal())
                 .bannerStatus(intro.getBannerStatus() != null ? intro.getBannerStatus().name() : null)
@@ -98,13 +97,13 @@ public class AdminIntroResponse {
                 .designImageUrl(S3Util.toUrl(intro.getDesignImageUrl()))
                 .frontendImageUrl(S3Util.toUrl(intro.getFrontendImageUrl()))
                 .backendImageUrl(S3Util.toUrl(intro.getBackendImageUrl()))
-                .partnerLogoUrls(S3Util.toUrls(partnerLogoUrls))
-                .meetupImageUrls(S3Util.toUrls(meetupImageUrls))
+                .partnerLogos(partnerLogos)
+                .meetupImages(meetupImages)
                 .activities(activities)
                 .teams(teams)
                 .expertLecture(expertLecture)
                 .obLecture(obLecture)
-                .sponsorImageUrls(S3Util.toUrls(sponsorImageUrls))
+                .sponsors(sponsors)
                 .build();
     }
 }

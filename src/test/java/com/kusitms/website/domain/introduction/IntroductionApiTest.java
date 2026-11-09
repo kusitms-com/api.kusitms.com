@@ -1,5 +1,6 @@
 package com.kusitms.website.domain.introduction;
 
+import com.jayway.jsonpath.JsonPath;
 import com.kusitms.website.domain.file.service.S3Service;
 import com.kusitms.website.domain.introduction.entity.BannerStatus;
 import com.kusitms.website.domain.introduction.entity.Introduction;
@@ -20,11 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -126,14 +129,16 @@ class IntroductionApiTest {
         mockMvc.perform(get("/admin/introductions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.planning_image_url").value(url("intro/planning.png")))
-                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(url("intro/verty.png")))
+                .andExpect(jsonPath("$.data.partner_logos[0].id").isNumber())
+                .andExpect(jsonPath("$.data.partner_logos[0].image_url").value(url("intro/verty.png")))
+                .andExpect(jsonPath("$.data.teams[0].id").isNumber())
                 .andExpect(jsonPath("$.data.teams[0].image_link").value(url("intro/team.jpg")));
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("목록 수정 시 새 파일이 없으면 기존 이미지 URL로 이미지를 유지하고, 요청 순서대로 교체한다")
-    void putIntroductionKeepsExistingListImages() throws Exception {
+    @DisplayName("목록은 id 기준으로 수정·추가·삭제하고, 파일을 다시 보내지 않아도 기존 이미지를 유지하며 요청 순서대로 정렬한다")
+    void putIntroductionUpdatesListItemsById() throws Exception {
         givenUploadReturnsFileName();
 
         mockMvc.perform(validRequest(34, 1400, 320, 80)
@@ -144,114 +149,169 @@ class IntroductionApiTest {
                         .param("teams[0].name", "학부학")
                         .param("teams[0].description", "기존 설명")
                         .param("teams[1].name", "경영총괄팀")
-                        .param("teams[1].description", "삭제될 팀"))
+                        .param("teams[1].description", "삭제될 팀")
+                        .param("activities[0].name", "OT")
+                        .param("activities[0].description", "오리엔테이션"))
                 .andExpect(status().isOk());
         clearPersistenceContext();
 
-        // 학부학은 설명만 수정(이미지 유지), 경영총괄팀은 삭제, 로고는 순서 변경 + 새 로고 추가
+        String created = adminIntroduction();
+        long teamId = idAt(created, "$.data.teams[0].id");
+        long lgId = idAt(created, "$.data.partner_logos[0].id");
+        long vertyId = idAt(created, "$.data.partner_logos[1].id");
+
+        // 학부학은 설명만 수정(파일 없이 이미지 유지), 경영총괄팀은 삭제, 새 팀 추가, 로고는 순서 변경 + 새 로고 추가
         mockMvc.perform(validRequest(34, 1400, 320, 80)
                         .file(new MockMultipartFile("partnerLogos[2].imageFile", "gabia.png", "image/png", "g".getBytes()))
+                        .param("teams[0].id", String.valueOf(teamId))
                         .param("teams[0].name", "학부학")
                         .param("teams[0].description", "수정된 설명")
-                        .param("teams[0].imageUrl", url("intro/team0.jpg"))
-                        .param("partnerLogos[0].imageUrl", url("intro/verty.png"))
-                        .param("partnerLogos[1].imageUrl", url("intro/lg.png")))
+                        // 폼 상태를 그대로 보내 빈 값이 와도 삭제 요청으로 보지 않는다
+                        .param("teams[0].removeImage", "")
+                        .param("teams[1].name", "교육기획팀")
+                        .param("teams[1].description", "새 팀")
+                        .param("partnerLogos[0].id", String.valueOf(vertyId))
+                        .param("partnerLogos[1].id", String.valueOf(lgId)))
                 .andExpect(status().isOk());
         clearPersistenceContext();
 
         mockMvc.perform(get("/admin/introductions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.teams.length()").value(1))
+                .andExpect(jsonPath("$.data.teams.length()").value(2))
+                .andExpect(jsonPath("$.data.teams[0].id").value(teamId))
                 .andExpect(jsonPath("$.data.teams[0].description").value("수정된 설명"))
                 .andExpect(jsonPath("$.data.teams[0].image_link").value(url("intro/team0.jpg")))
-                .andExpect(jsonPath("$.data.partner_logo_urls.length()").value(3))
+                .andExpect(jsonPath("$.data.teams[1].name").value("교육기획팀"))
+                .andExpect(jsonPath("$.data.teams[1].image_link").doesNotExist())
+                .andExpect(jsonPath("$.data.partner_logos.length()").value(3))
+                .andExpect(jsonPath("$.data.partner_logos[0].id").value(vertyId))
+                .andExpect(jsonPath("$.data.partner_logos[1].id").value(lgId))
+                .andExpect(jsonPath("$.data.partner_logos[2].image_url").value(url("intro/gabia.png")))
+                // 요청에서 생략한 목록은 그대로 유지
+                .andExpect(jsonPath("$.data.activities[0].name").value("OT"));
+
+        // 공개 응답의 이미지 목록은 기존처럼 URL 배열이고 같은 순서를 따른다
+        mockMvc.perform(get("/api/introductions"))
                 .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(url("intro/verty.png")))
                 .andExpect(jsonPath("$.data.partner_logo_urls[1]").value(url("intro/lg.png")))
                 .andExpect(jsonPath("$.data.partner_logo_urls[2]").value(url("intro/gabia.png")));
-
-        // DB에는 URL이 아닌 키로 저장한다
-        Introduction introduction = introRepository.findFirstByOrderByIntroductionIdAsc().orElseThrow();
-        assertThat(introduction.getManageTeam()).extracting("imageUrl").containsExactly("intro/team0.jpg");
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("우리 버킷이 아닌 기존 이미지 URL은 400을 반환한다")
-    void putIntroductionRejectsExternalImageUrl() throws Exception {
-        mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .file(new MockMultipartFile("planningImage", "planning.png", "image/png", "p".getBytes()))
-                        .param("teams[0].name", "학부학")
-                        .param("teams[0].description", "설명")
-                        .param("teams[0].imageUrl", "https://evil.example.com/x.png"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400));
-
-        // 검증이 업로드보다 먼저라 S3에 파일이 남지 않는다
-        verify(s3Service, never()).uploadFile(any(), any());
-    }
-
-    @Test
-    @WithMockUser(roles = "MANAGER")
-    @DisplayName("우리 버킷이라도 소개 이미지 폴더가 아닌 URL은 400을 반환한다")
-    void putIntroductionRejectsNonIntroImageUrl() throws Exception {
-        mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", url("profile/member.png")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @WithMockUser(roles = "MANAGER")
-    @DisplayName("경로에 ..가 들어간 기존 이미지 URL은 400을 반환한다")
-    void putIntroductionRejectsTraversalImageUrl() throws Exception {
-        mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", url("intro/../recruit/x.png")))
-                .andExpect(status().isBadRequest());
-        mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", url("intro/%2E%2e/recruit/x.png")))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @WithMockUser(roles = "MANAGER")
-    @DisplayName("파일명 안의 ..는 경로 이동이 아니므로 기존 이미지로 유지할 수 있다")
-    void putIntroductionAllowsDotsInFileName() throws Exception {
-        mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", url("intro/uuidlogo..v2.png")))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @WithMockUser(roles = "MANAGER")
-    @DisplayName("내용은 있는데 이름이 없는 목록 항목은 기존 목록을 지우지 않고 400을 반환한다")
-    void putIntroductionRejectsUnnamedListItem() throws Exception {
-        mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("teams[0].description", "이름 없이 설명만"))
-                .andExpect(status().isBadRequest());
-
-        verify(s3Service, never()).uploadFile(any(), any());
-    }
-
-    @Test
-    @WithMockUser(roles = "MANAGER")
-    @DisplayName("새 파일을 함께 보내면 기존 이미지 URL은 검증하지 않고 새 파일로 교체한다")
-    void putIntroductionPrefersNewFileOverImageUrl() throws Exception {
+    @DisplayName("기존 항목은 새 파일을 보내면 이미지를 교체하고, removeImage면 이미지를 지운다")
+    void putIntroductionReplacesOrRemovesItemImage() throws Exception {
         givenUploadReturnsFileName();
 
         mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .file(new MockMultipartFile("teams[0].imageFile", "new.jpg", "image/jpeg", "n".getBytes()))
+                        .file(new MockMultipartFile("teams[0].imageFile", "old0.jpg", "image/jpeg", "t".getBytes()))
+                        .file(new MockMultipartFile("teams[1].imageFile", "old1.jpg", "image/jpeg", "t".getBytes()))
                         .param("teams[0].name", "학부학")
-                        .param("teams[0].description", "설명")
-                        .param("teams[0].imageUrl", "https://legacy.example.com/old.png"))
+                        .param("teams[1].name", "경영총괄팀"))
+                .andExpect(status().isOk());
+        clearPersistenceContext();
+
+        String created = adminIntroduction();
+        long firstId = idAt(created, "$.data.teams[0].id");
+        long secondId = idAt(created, "$.data.teams[1].id");
+
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .file(new MockMultipartFile("teams[0].imageFile", "new0.jpg", "image/jpeg", "n".getBytes()))
+                        .param("teams[0].id", String.valueOf(firstId))
+                        .param("teams[0].name", "학부학")
+                        .param("teams[1].id", String.valueOf(secondId))
+                        .param("teams[1].name", "경영총괄팀")
+                        .param("teams[1].removeImage", "true"))
                 .andExpect(status().isOk());
         clearPersistenceContext();
 
         mockMvc.perform(get("/admin/introductions"))
-                .andExpect(jsonPath("$.data.teams[0].image_link").value(url("intro/new.jpg")));
+                .andExpect(jsonPath("$.data.teams[0].image_link").value(url("intro/new0.jpg")))
+                .andExpect(jsonPath("$.data.teams[1].image_link").doesNotExist());
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    @DisplayName("목록 인덱스가 비어 생긴 이름 없는 항목은 저장하지 않는다")
+    @DisplayName("이 소개의 해당 목록에 없는 id나 중복 id는 업로드 전에 400을 반환한다")
+    void putIntroductionRejectsInvalidItemId() throws Exception {
+        givenUploadReturnsFileName();
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .file(new MockMultipartFile("partnerLogos[0].imageFile", "lg.png", "image/png", "l".getBytes()))
+                        .param("teams[0].name", "학부학"))
+                .andExpect(status().isOk());
+        clearPersistenceContext();
+        long teamId = idAt(adminIntroduction(), "$.data.teams[0].id");
+        long logoId = idAt(adminIntroduction(), "$.data.partner_logos[0].id");
+        clearInvocations(s3Service);
+
+        // 다른 목록(로고)의 id를 운영진 id로 보낸 경우
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .file(new MockMultipartFile("planningImage", "planning.png", "image/png", "p".getBytes()))
+                        .param("teams[0].id", String.valueOf(teamId + logoId + 1000))
+                        .param("teams[0].name", "학부학"))
+                .andExpect(status().isBadRequest());
+
+        // 같은 id를 두 번 보낸 경우
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .param("teams[0].id", String.valueOf(teamId))
+                        .param("teams[0].name", "학부학")
+                        .param("teams[1].id", String.valueOf(teamId))
+                        .param("teams[1].name", "학부학"))
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).uploadFile(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("소개를 처음 등록할 때 id를 보내면 400을 반환한다")
+    void putIntroductionRejectsIdOnCreate() throws Exception {
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .param("sponsors[0].id", "1"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(introRepository.count()).isZero();
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("내용은 있는데 이름이 없는 목록 항목은 기존 목록을 바꾸지 않고 400을 반환한다")
+    void putIntroductionRejectsUnnamedListItem() throws Exception {
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .param("teams[0].description", "이름 없이 설명만"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .param("activities[0].removeImage2", "true"))
+                .andExpect(status().isBadRequest());
+
+        verify(s3Service, never()).uploadFile(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("빈 항목 하나만 보내면 해당 목록을 비운다")
+    void putIntroductionClearsListWithBlankItem() throws Exception {
+        givenUploadReturnsFileName();
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .file(new MockMultipartFile("sponsors[0].imageFile", "gabia.png", "image/png", "g".getBytes()))
+                        .param("teams[0].name", "학부학"))
+                .andExpect(status().isOk());
+        clearPersistenceContext();
+
+        mockMvc.perform(validRequest(34, 1400, 320, 80)
+                        .param("sponsors[0].id", "")
+                        .param("teams[0].name", ""))
+                .andExpect(status().isOk());
+        clearPersistenceContext();
+
+        mockMvc.perform(get("/admin/introductions"))
+                .andExpect(jsonPath("$.data.sponsors.length()").value(0))
+                .andExpect(jsonPath("$.data.teams.length()").value(0));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("목록 인덱스가 비어 생긴 빈 항목은 저장하지 않는다")
     void putIntroductionSkipsSparseListItems() throws Exception {
         mockMvc.perform(validRequest(34, 1400, 320, 80)
                         .param("teams[0].name", "학부학")
@@ -302,6 +362,16 @@ class IntroductionApiTest {
     // S3Util을 거치지 않고 prefix와 키 사이에 / 하나를 넣은 기대 URL을 만든다
     private String url(String key) {
         return (s3Prefix.endsWith("/") ? s3Prefix : s3Prefix + "/") + key;
+    }
+
+    private String adminIntroduction() throws Exception {
+        return mockMvc.perform(get("/admin/introductions"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    private static long idAt(String json, String path) {
+        return ((Number) JsonPath.read(json, path)).longValue();
     }
 
     private void givenUploadReturnsFileName() {

@@ -4,22 +4,29 @@ import com.kusitms.website.domain.file.service.S3Service;
 import com.kusitms.website.domain.introduction.dto.request.ActivityRequest;
 import com.kusitms.website.domain.introduction.dto.request.ExpertLectureRequest;
 import com.kusitms.website.domain.introduction.dto.request.IntroImageRequest;
+import com.kusitms.website.domain.introduction.dto.request.IntroListItemRequest;
 import com.kusitms.website.domain.introduction.dto.request.IntroRequest;
 import com.kusitms.website.domain.introduction.dto.request.ManagementTeamRequest;
 import com.kusitms.website.domain.introduction.dto.request.OBLectureRequest;
 import com.kusitms.website.domain.introduction.dto.response.*;
 import com.kusitms.website.domain.introduction.entity.*;
 import com.kusitms.website.domain.introduction.repository.*;
-import com.kusitms.website.global.util.S3Util;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.EntityNotFoundException;
@@ -94,42 +101,42 @@ public class IntroService {
                 .map(OBLectureResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        List<String> partnerLogoUrls = intro.getPartnerLogos().stream()
-                .map(PartnerLogo::getImageUrl)
+        List<IntroImageResponse> partnerLogos = intro.getPartnerLogos().stream()
+                .map(logo -> IntroImageResponse.of(logo.getPartnerLogoId(), logo.getImageUrl()))
                 .collect(Collectors.toList());
 
-        List<String> meetupImageUrls = intro.getMeetupImages().stream()
-                .map(IntroMeetupImage::getImageUrl)
+        List<IntroImageResponse> meetupImages = intro.getMeetupImages().stream()
+                .map(image -> IntroImageResponse.of(image.getMeetupImageId(), image.getImageUrl()))
                 .collect(Collectors.toList());
 
         List<ActivityResponse> activityResponses = intro.getActivities().stream()
                 .map(ActivityResponse::fromEntity)
                 .collect(Collectors.toList());
 
-        List<String> sponsorImageUrls = intro.getSponsors().stream()
-                .map(Sponsor::getImageUrl)
+        List<IntroImageResponse> sponsors = intro.getSponsors().stream()
+                .map(sponsor -> IntroImageResponse.of(sponsor.getSponsorId(), sponsor.getImageUrl()))
                 .collect(Collectors.toList());
 
-        return AdminIntroResponse.fromEntity(intro, partnerLogoUrls, meetupImageUrls,
-                activityResponses, teams, expertLectures, obLectures, sponsorImageUrls);
+        return AdminIntroResponse.fromEntity(intro, partnerLogos, meetupImages,
+                activityResponses, teams, expertLectures, obLectures, sponsors);
     }
 
     @Transactional
     public void saveOrUpdate(IntroRequest request) {
-        // 업로드를 시작하기 전에 검증해, 잘못된 URL로 실패할 때 S3에 파일이 남지 않게 한다
-        validateExistingImageUrls(request);
+        Introduction introduction = introRepository.findFirstByOrderByIntroductionIdAsc().orElse(null);
 
-        Optional<Introduction> introduction = introRepository.findFirstByOrderByIntroductionIdAsc();
+        // 업로드를 시작하기 전에 검증해, 잘못된 요청으로 실패할 때 S3에 파일이 남지 않게 한다
+        validateListItems(request, introduction);
 
-        if (introduction.isPresent()) {
-            updateIntroduction(request, introduction.get());
-            return;
+        if (introduction == null) {
+            introduction = saveIntroduction(request);
+        } else {
+            updateIntroduction(request, introduction);
         }
-
-        saveIntroduction(request);
+        syncLists(request, introduction);
     }
 
-    private void saveIntroduction(IntroRequest request) {
+    private Introduction saveIntroduction(IntroRequest request) {
         String planningImageUrl = uploadIfPresent(request.getPlanningImage());
         String designImageUrl = uploadIfPresent(request.getDesignImage());
         String frontendImageUrl = uploadIfPresent(request.getFrontendImage());
@@ -137,15 +144,7 @@ public class IntroService {
 
         Introduction introduction = IntroRequest.from(request, null,
                 planningImageUrl, designImageUrl, frontendImageUrl, backendImageUrl);
-        introRepository.save(introduction);
-
-        saveManageTeams(request, introduction);
-        saveExpertLectures(request, introduction);
-        saveOBLectures(request, introduction);
-        savePartnerLogos(request.getPartnerLogos(), introduction);
-        saveMeetupImages(request.getMeetupImages(), introduction);
-        saveActivities(request.getActivities(), introduction);
-        saveSponsors(request.getSponsors(), introduction);
+        return introRepository.save(introduction);
     }
 
     private void updateIntroduction(IntroRequest request, Introduction introduction) {
@@ -167,14 +166,6 @@ public class IntroService {
                 backendImageUrl);
 
         introRepository.save(introduction);
-
-        replaceManageTeams(request, introduction);
-        replaceExpertLectures(request, introduction);
-        replaceOBLectures(request, introduction);
-        replacePartnerLogos(request.getPartnerLogos(), introduction);
-        replaceMeetupImages(request.getMeetupImages(), introduction);
-        replaceActivities(request.getActivities(), introduction);
-        replaceSponsors(request.getSponsors(), introduction);
     }
 
     private Introduction getIntroductionEntity() {
@@ -182,211 +173,197 @@ public class IntroService {
                 .orElseThrow(() -> new EntityNotFoundException("학회 소개 정보가 존재하지 않습니다."));
     }
 
-    private void replaceManageTeams(IntroRequest request, Introduction introduction) {
-        if (request.getTeams() == null) return;
-        manageTeamRepository.deleteByIntroduction(introduction);
-        saveManageTeams(request, introduction);
+    // 목록은 생략하면 유지하고, 전달하면 id 기준으로 수정·추가·삭제하며 요청 순서대로 정렬한다
+    private void syncLists(IntroRequest request, Introduction introduction) {
+        sync(request.getTeams(), this::isTeamItem,
+                introduction.getManageTeam(), ManageTeam::getTeamId, manageTeamRepository,
+                (team, order) -> ManagementTeamRequest.from(team,
+                        uploadIfPresent(team.getImageFile()), introduction, order),
+                (entity, team, order) -> entity.update(team.getName(), team.getDescription(),
+                        resolveImage(team.getImageFile(), team.getRemoveImage(), entity.getImageUrl()), order));
+
+        sync(request.getExpertLecture(), this::isExpertLectureItem,
+                introduction.getExpertLecture(), ExpertLecture::getLectureId, expertLectureRepository,
+                (lecture, order) -> ExpertLectureRequest.from(lecture,
+                        uploadIfPresent(lecture.getImageFile()), introduction, order),
+                (entity, lecture, order) -> entity.update(lecture.getName(), lecture.getCorporation(), lecture.getDescription(),
+                        resolveImage(lecture.getImageFile(), lecture.getRemoveImage(), entity.getImageUrl()), order));
+
+        sync(request.getObLecture(), this::isObLectureItem,
+                introduction.getObLecture(), OBLecture::getLectureId, obLectureRepository,
+                (lecture, order) -> OBLectureRequest.from(lecture,
+                        uploadIfPresent(lecture.getImageFile()), introduction, order),
+                (entity, lecture, order) -> entity.update(lecture.getName(), lecture.getTopic(),
+                        resolveImage(lecture.getImageFile(), lecture.getRemoveImage(), entity.getImageUrl()), order));
+
+        sync(request.getActivities(), this::isActivityItem,
+                introduction.getActivities(), Activity::getActivityId, activityRepository,
+                (activity, order) -> ActivityRequest.from(activity,
+                        uploadIfPresent(activity.getImageFile1()), uploadIfPresent(activity.getImageFile2()), introduction, order),
+                (entity, activity, order) -> entity.update(activity.getName(), activity.getDescription(),
+                        resolveImage(activity.getImageFile1(), activity.getRemoveImage1(), entity.getImageUrl1()),
+                        resolveImage(activity.getImageFile2(), activity.getRemoveImage2(), entity.getImageUrl2()), order));
+
+        sync(request.getPartnerLogos(), this::isImageItem,
+                introduction.getPartnerLogos(), PartnerLogo::getPartnerLogoId, partnerLogoRepository,
+                (image, order) -> PartnerLogo.builder().introduction(introduction)
+                        .imageUrl(uploadIfPresent(image.getImageFile())).displayOrder(order).build(),
+                (entity, image, order) -> entity.update(uploadOrKeep(image.getImageFile(), entity.getImageUrl()), order));
+
+        sync(request.getMeetupImages(), this::isImageItem,
+                introduction.getMeetupImages(), IntroMeetupImage::getMeetupImageId, introMeetupImageRepository,
+                (image, order) -> IntroMeetupImage.builder().introduction(introduction)
+                        .imageUrl(uploadIfPresent(image.getImageFile())).displayOrder(order).build(),
+                (entity, image, order) -> entity.update(uploadOrKeep(image.getImageFile(), entity.getImageUrl()), order));
+
+        sync(request.getSponsors(), this::isImageItem,
+                introduction.getSponsors(), Sponsor::getSponsorId, sponsorRepository,
+                (image, order) -> Sponsor.builder().introduction(introduction)
+                        .imageUrl(uploadIfPresent(image.getImageFile())).displayOrder(order).build(),
+                (entity, image, order) -> entity.update(uploadOrKeep(image.getImageFile(), entity.getImageUrl()), order));
     }
 
-    private void replaceExpertLectures(IntroRequest request, Introduction introduction) {
-        if (request.getExpertLecture() == null) return;
-        expertLectureRepository.deleteByIntroduction(introduction);
-        saveExpertLectures(request, introduction);
-    }
+    // 부모(Introduction) 컬렉션을 기존 목록으로 사용한다
+    private <E, R extends IntroListItemRequest> void sync(List<R> requests, Predicate<R> isItem,
+                                                          List<E> parentCollection, Function<E, Long> idOf,
+                                                          JpaRepository<E, Long> repository,
+                                                          BiFunction<R, Integer, E> create, ItemUpdater<E, R> update) {
+        if (requests == null) return;
+        List<R> items = listItems(requests, isItem);
+        List<E> existing = new ArrayList<>(parentCollection);
 
-    private void replaceOBLectures(IntroRequest request, Introduction introduction) {
-        if (request.getObLecture() == null) return;
-        obLectureRepository.deleteByIntroduction(introduction);
-        saveOBLectures(request, introduction);
-    }
-
-    private void replacePartnerLogos(List<IntroImageRequest> images, Introduction introduction) {
-        if (images == null) return;
-        partnerLogoRepository.deleteByIntroduction(introduction);
-        savePartnerLogos(images, introduction);
-    }
-
-    private void replaceMeetupImages(List<IntroImageRequest> images, Introduction introduction) {
-        if (images == null) return;
-        introMeetupImageRepository.deleteByIntroduction(introduction);
-        saveMeetupImages(images, introduction);
-    }
-
-    private void replaceActivities(List<ActivityRequest> activities, Introduction introduction) {
-        if (activities == null) return;
-        activityRepository.deleteByIntroduction(introduction);
-        saveActivities(activities, introduction);
-    }
-
-    private void replaceSponsors(List<IntroImageRequest> images, Introduction introduction) {
-        if (images == null) return;
-        sponsorRepository.deleteByIntroduction(introduction);
-        saveSponsors(images, introduction);
-    }
-
-    private void saveManageTeams(IntroRequest request, Introduction introduction) {
-        if (request.getTeams() == null) return;
-        List<ManageTeam> manageTeams = request.getTeams().stream()
-                .filter(item -> item != null && StringUtils.hasText(item.getName()))
-                .map(team -> {
-                    String imageUrl = uploadOrKeepUrl(team.getImageFile(), team.getImageUrl());
-                    return ManagementTeamRequest.from(team, imageUrl, introduction);
-                })
-                .collect(Collectors.toList());
-        manageTeamRepository.saveAll(manageTeams);
-    }
-
-    private void saveExpertLectures(IntroRequest request, Introduction introduction) {
-        if (request.getExpertLecture() == null) return;
-        List<ExpertLecture> expertLectures = request.getExpertLecture().stream()
-                .filter(item -> item != null && StringUtils.hasText(item.getName()))
-                .map(lecture -> {
-                    String imageUrl = uploadOrKeepUrl(lecture.getImageFile(), lecture.getImageUrl());
-                    return ExpertLectureRequest.from(lecture, imageUrl, introduction);
-                })
-                .collect(Collectors.toList());
-        expertLectureRepository.saveAll(expertLectures);
-    }
-
-    private void saveOBLectures(IntroRequest request, Introduction introduction) {
-        if (request.getObLecture() == null) return;
-        List<OBLecture> obLectures = request.getObLecture().stream()
-                .filter(item -> item != null && StringUtils.hasText(item.getName()))
-                .map(lecture -> {
-                    String imageUrl = uploadOrKeepUrl(lecture.getImageFile(), lecture.getImageUrl());
-                    return OBLectureRequest.from(lecture, imageUrl, introduction);
-                })
-                .collect(Collectors.toList());
-        obLectureRepository.saveAll(obLectures);
-    }
-
-    private void savePartnerLogos(List<IntroImageRequest> images, Introduction introduction) {
-        List<PartnerLogo> logos = resolveImages(images).stream()
-                .map(imageUrl -> PartnerLogo.builder()
-                        .introduction(introduction)
-                        .imageUrl(imageUrl)
-                        .build())
-                .collect(Collectors.toList());
-        partnerLogoRepository.saveAll(logos);
-    }
-
-    private void saveMeetupImages(List<IntroImageRequest> images, Introduction introduction) {
-        List<IntroMeetupImage> meetupImages = resolveImages(images).stream()
-                .map(imageUrl -> IntroMeetupImage.builder()
-                        .introduction(introduction)
-                        .imageUrl(imageUrl)
-                        .build())
-                .collect(Collectors.toList());
-        introMeetupImageRepository.saveAll(meetupImages);
-    }
-
-    private void saveActivities(List<ActivityRequest> activityRequests, Introduction introduction) {
-        if (activityRequests == null) return;
-        List<Activity> activities = activityRequests.stream()
-                .filter(item -> item != null && StringUtils.hasText(item.getName()))
-                .map(req -> {
-                    String imageUrl1 = uploadOrKeepUrl(req.getImageFile1(), req.getImageUrl1());
-                    String imageUrl2 = uploadOrKeepUrl(req.getImageFile2(), req.getImageUrl2());
-                    return ActivityRequest.from(req, imageUrl1, imageUrl2, introduction);
-                })
-                .collect(Collectors.toList());
-        activityRepository.saveAll(activities);
-    }
-
-    private void saveSponsors(List<IntroImageRequest> images, Introduction introduction) {
-        List<Sponsor> sponsors = resolveImages(images).stream()
-                .map(imageUrl -> Sponsor.builder()
-                        .introduction(introduction)
-                        .imageUrl(imageUrl)
-                        .build())
-                .collect(Collectors.toList());
-        sponsorRepository.saveAll(sponsors);
-    }
-
-    // 이미지 목록은 요청 순서를 유지하고, 파일도 기존 URL도 없는 항목은 건너뛴다
-    private List<String> resolveImages(List<IntroImageRequest> images) {
-        if (images == null) return List.of();
-        return images.stream()
+        Set<Long> keptIds = items.stream()
+                .map(IntroListItemRequest::getId)
                 .filter(Objects::nonNull)
-                .map(image -> uploadOrKeepUrl(image.getImageFile(), image.getImageUrl()))
+                .collect(Collectors.toSet());
+        List<E> removed = existing.stream()
+                .filter(entity -> !keptIds.contains(idOf.apply(entity)))
+                .collect(Collectors.toList());
+        // 컬렉션에 남아 있으면 cascade로 다시 저장되므로 컬렉션에서도 뺀다
+        parentCollection.removeAll(removed);
+        repository.deleteAll(removed);
+
+        Map<Long, E> existingById = existing.stream().collect(Collectors.toMap(idOf, Function.identity()));
+        List<E> created = new ArrayList<>();
+        for (int order = 0; order < items.size(); order++) {
+            R item = items.get(order);
+            if (item.getId() == null) {
+                E entity = create.apply(item, order);
+                created.add(entity);
+                // 빌더가 컬렉션에 직접 추가하는 엔티티(운영진 등)와 그렇지 않은 엔티티를 맞춘다
+                if (!parentCollection.contains(entity)) parentCollection.add(entity);
+            } else {
+                update.apply(existingById.get(item.getId()), item, order);
+            }
+        }
+        repository.saveAll(created);
+    }
+
+    @FunctionalInterface
+    private interface ItemUpdater<E, R> {
+        void apply(E entity, R request, int order);
+    }
+
+    private void validateListItems(IntroRequest request, Introduction introduction) {
+        validateIds(request.getTeams(), this::isTeamItem, introduction, Introduction::getManageTeam, ManageTeam::getTeamId, "운영진");
+        validateIds(request.getExpertLecture(), this::isExpertLectureItem, introduction, Introduction::getExpertLecture, ExpertLecture::getLectureId, "전문가 강연");
+        validateIds(request.getObLecture(), this::isObLectureItem, introduction, Introduction::getObLecture, OBLecture::getLectureId, "OB 강연");
+        validateIds(request.getActivities(), this::isActivityItem, introduction, Introduction::getActivities, Activity::getActivityId, "활동");
+        validateIds(request.getPartnerLogos(), this::isImageItem, introduction, Introduction::getPartnerLogos, PartnerLogo::getPartnerLogoId, "파트너사 로고");
+        validateIds(request.getMeetupImages(), this::isImageItem, introduction, Introduction::getMeetupImages, IntroMeetupImage::getMeetupImageId, "밋업 사진");
+        validateIds(request.getSponsors(), this::isImageItem, introduction, Introduction::getSponsors, Sponsor::getSponsorId, "후원사 로고");
+    }
+
+    // 요청 id는 이 소개의 같은 목록에 있는 항목만 허용하고, 한 요청에 같은 id가 두 번 나올 수 없다
+    private <E, R extends IntroListItemRequest> void validateIds(List<R> requests, Predicate<R> isItem,
+                                                                 Introduction introduction,
+                                                                 Function<Introduction, List<E>> collectionOf,
+                                                                 Function<E, Long> idOf, String listName) {
+        if (requests == null) return;
+        List<R> items = listItems(requests, isItem);
+        if (items.stream().allMatch(item -> item.getId() == null)) return;
+
+        Set<Long> existingIds = introduction == null ? Set.of()
+                : collectionOf.apply(introduction).stream().map(idOf).collect(Collectors.toSet());
+        Set<Long> seen = new HashSet<>();
+        for (R item : items) {
+            Long id = item.getId();
+            if (id == null) continue;
+            if (!existingIds.contains(id)) {
+                throw new IllegalArgumentException(listName + " 항목 id가 올바르지 않습니다: " + id);
+            }
+            if (!seen.add(id)) {
+                throw new IllegalArgumentException(listName + " 항목 id가 중복되었습니다: " + id);
+            }
+        }
+    }
+
+    // multipart 인덱스가 비면(teams[0], teams[2]) 중간 항목이 빈 객체로 채워지므로 실제 항목만 남긴다
+    private static <R> List<R> listItems(List<R> requests, Predicate<R> isItem) {
+        return requests.stream()
                 .filter(Objects::nonNull)
+                .filter(isItem)
                 .collect(Collectors.toList());
     }
 
-    private String uploadIfPresent(MultipartFile file) {
-        if (file == null || file.isEmpty()) return null;
-        return s3Service.uploadFile(file, dirName);
+    private boolean isTeamItem(ManagementTeamRequest team) {
+        return isNamedItem(team.getName(), team.getId(), team.getDescription(), team.getImageFile(),
+                removeFlag(team.getRemoveImage()));
     }
 
-    private String uploadOrKeep(MultipartFile file, String existingUrl) {
-        if (file == null || file.isEmpty()) return existingUrl;
-        return s3Service.uploadFile(file, dirName);
+    private boolean isExpertLectureItem(ExpertLectureRequest lecture) {
+        return isNamedItem(lecture.getName(), lecture.getId(), lecture.getCorporation(), lecture.getDescription(),
+                lecture.getImageFile(), removeFlag(lecture.getRemoveImage()));
     }
 
-    private void validateExistingImageUrls(IntroRequest request) {
-        nonNullItems(request.getTeams()).stream()
-                .filter(t -> isNamedItem(t.getName(), t.getDescription(), t.getImageFile(), t.getImageUrl()))
-                .forEach(t -> validateKeptImage(t.getImageFile(), t.getImageUrl()));
-        nonNullItems(request.getExpertLecture()).stream()
-                .filter(l -> isNamedItem(l.getName(), l.getCorporation(), l.getDescription(), l.getImageFile(), l.getImageUrl()))
-                .forEach(l -> validateKeptImage(l.getImageFile(), l.getImageUrl()));
-        nonNullItems(request.getObLecture()).stream()
-                .filter(l -> isNamedItem(l.getName(), l.getTopic(), l.getImageFile(), l.getImageUrl()))
-                .forEach(l -> validateKeptImage(l.getImageFile(), l.getImageUrl()));
-        nonNullItems(request.getActivities()).stream()
-                .filter(a -> isNamedItem(a.getName(), a.getDescription(),
-                        a.getImageFile1(), a.getImageFile2(), a.getImageUrl1(), a.getImageUrl2()))
-                .forEach(a -> {
-                    validateKeptImage(a.getImageFile1(), a.getImageUrl1());
-                    validateKeptImage(a.getImageFile2(), a.getImageUrl2());
-                });
-        Stream.of(request.getPartnerLogos(), request.getMeetupImages(), request.getSponsors())
-                .flatMap(images -> nonNullItems(images).stream())
-                .forEach(i -> validateKeptImage(i.getImageFile(), i.getImageUrl()));
+    private boolean isObLectureItem(OBLectureRequest lecture) {
+        return isNamedItem(lecture.getName(), lecture.getId(), lecture.getTopic(), lecture.getImageFile(),
+                removeFlag(lecture.getRemoveImage()));
     }
 
-    // 인덱스를 건너뛰어 생긴 빈 항목은 저장 시 건너뛰고, 내용은 있는데 이름이 없으면 기존 목록이 지워지기 전에 400으로 거절한다
+    private boolean isActivityItem(ActivityRequest activity) {
+        return isNamedItem(activity.getName(), activity.getId(), activity.getDescription(),
+                activity.getImageFile1(), activity.getImageFile2(),
+                removeFlag(activity.getRemoveImage1()), removeFlag(activity.getRemoveImage2()));
+    }
+
+    // 삭제 요청(true)만 항목 내용으로 본다. 폼이 보내는 빈 값·false는 빈 항목 판단에 영향을 주지 않는다
+    private static String removeFlag(Boolean remove) {
+        return Boolean.TRUE.equals(remove) ? "true" : null;
+    }
+
+    // 이미지 목록은 기존 항목(id)이거나 새 파일이 있는 항목만 저장한다
+    private boolean isImageItem(IntroImageRequest image) {
+        return image.getId() != null || hasFile(image.getImageFile());
+    }
+
+    // 빈 항목은 건너뛰고, 내용은 있는데 이름이 없으면 기존 목록이 바뀌기 전에 400으로 거절한다
     private boolean isNamedItem(String name, Object... contents) {
         if (StringUtils.hasText(name)) return true;
-        boolean hasContent = Stream.of(contents).anyMatch(c ->
-                c instanceof MultipartFile ? !((MultipartFile) c).isEmpty() : c != null && StringUtils.hasText(c.toString()));
+        boolean hasContent = Stream.of(contents).anyMatch(content -> content instanceof MultipartFile
+                ? hasFile((MultipartFile) content)
+                : content != null && StringUtils.hasText(content.toString()));
         if (hasContent) {
             throw new IllegalArgumentException("이름이 없는 목록 항목이 있습니다.");
         }
         return false;
     }
 
-    // 새 파일이 있으면 기존 URL은 쓰지 않으므로 검증하지 않는다
-    private void validateKeptImage(MultipartFile file, String existingUrl) {
-        if (file == null || file.isEmpty()) toIntroKey(existingUrl);
+    private static boolean hasFile(MultipartFile file) {
+        return file != null && !file.isEmpty();
     }
 
-    // multipart 인덱스가 비면(teams[0], teams[2]) 중간 항목이 빈 객체로 채워지므로, 목록 저장 시 이름 없는 항목은 건너뛴다
-    private static <T> List<T> nonNullItems(List<T> list) {
-        if (list == null) return List.of();
-        return list.stream().filter(Objects::nonNull).collect(Collectors.toList());
+    private String uploadIfPresent(MultipartFile file) {
+        return resolveImage(file, false, null);
     }
 
-    // 소개 이미지 폴더(intro/)의 키만 허용한다. 다른 도메인 이미지를 소개 페이지에 연결하지 못하게 한다
-    private String toIntroKey(String url) {
-        String key = S3Util.toKey(url);
-        if (key != null && (!key.startsWith(dirName + "/") || hasDotSegment(key))) {
-            throw new IllegalArgumentException("소개 이미지가 아닌 URL입니다: " + url);
-        }
-        return key;
+    private String uploadOrKeep(MultipartFile file, String existingUrl) {
+        return resolveImage(file, false, existingUrl);
     }
 
-    // 브라우저가 경로의 . / .. 세그먼트(%2e 인코딩 포함)를 정규화하므로 intro/ 폴더 제한을 우회하지 못하게 막는다
-    // 파일명 안의 ..(logo..v2.png)는 세그먼트가 아니므로 허용한다
-    private static boolean hasDotSegment(String key) {
-        return Stream.of(key.split("/"))
-                .map(segment -> segment.replaceAll("(?i)%2e", "."))
-                .anyMatch(segment -> segment.equals(".") || segment.equals(".."));
-    }
-
-    // 목록은 행을 지우고 다시 만들므로, 새 파일이 없으면 요청으로 받은 기존 이미지 URL을 키로 되돌려 유지한다
-    private String uploadOrKeepUrl(MultipartFile file, String existingUrl) {
-        if (file != null && !file.isEmpty()) return s3Service.uploadFile(file, dirName);
-        return toIntroKey(existingUrl);
+    // 새 파일 → 삭제 요청 → 기존 이미지 순으로 적용한다. 업로드는 여기서만 한다
+    private String resolveImage(MultipartFile file, Boolean remove, String existingUrl) {
+        if (hasFile(file)) return s3Service.uploadFile(file, dirName);
+        return Boolean.TRUE.equals(remove) ? null : existingUrl;
     }
 }

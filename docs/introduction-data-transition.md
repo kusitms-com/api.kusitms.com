@@ -30,6 +30,8 @@
 
 이미지 필드는 모두 S3 전체 URL로 내려간다. DB에는 S3 키(`intro/<uuid>파일명`)만 저장하고 응답에서 `aws.s3.prefix`를 붙인다. 업로드하지 않은 이미지는 `null`이다.
 
+목록 항목에는 수정용 `id`가 포함된다. 이미지 목록은 공개 응답에서 URL 배열(`partner_logo_urls`, `meetup_image_urls`, `sponsor_image_urls`)로, 어드민 응답에서 `{id, image_url}` 항목 배열(`partner_logos`, `meetup_images`, `sponsors`)로 내려간다.
+
 메인 배너(문구·배경)는 프론트 컴포넌트로 구현하므로 슬로건과 배너 이미지는 API에서 관리하지 않는다. (`slogan`, `banner_image_url` 컬럼은 남아 있지만 매핑하지 않는다)
 
 ### 등록 및 수정
@@ -58,27 +60,33 @@
 | --- | --- |
 | 단일 이미지 | `planningImage`, `designImage`, `frontendImage`, `backendImage` |
 | 항목 목록 | `teams`, `expertLecture`, `obLecture`, `activities` |
-| 이미지 목록 | `partnerLogos`, `meetupImages`, `sponsors` (항목마다 `imageFile` 또는 `imageUrl`) |
+| 이미지 목록 | `partnerLogos`, `meetupImages`, `sponsors` |
 
-목록 항목의 이미지 필드는 다음과 같다. `imageUrl` 계열에는 조회 응답의 URL을 그대로 보낸다.
+목록 항목은 어드민 조회 응답의 `id`로 기존 항목을 가리킨다.
 
-| 목록 | 새 파일 | 기존 이미지 유지 |
+| 목록 | 항목 필드 | 이미지 |
 | --- | --- | --- |
-| `teams[i]`, `expertLecture[i]`, `obLecture[i]` | `imageFile` | `imageUrl` |
-| `activities[i]` | `imageFile1`, `imageFile2` | `imageUrl1`, `imageUrl2` |
-| `partnerLogos[i]`, `meetupImages[i]`, `sponsors[i]` | `imageFile` | `imageUrl` |
+| `teams[i]` | `id`, `name`, `description` | `imageFile`, `removeImage` |
+| `expertLecture[i]` | `id`, `name`, `corporation`, `description` | `imageFile`, `removeImage` |
+| `obLecture[i]` | `id`, `name`, `topic` | `imageFile`, `removeImage` |
+| `activities[i]` | `id`, `name`, `description` | `imageFile1`, `imageFile2`, `removeImage1`, `removeImage2` |
+| `partnerLogos[i]`, `meetupImages[i]`, `sponsors[i]` | `id` | `imageFile` |
 
 수정 요청의 적용 규칙은 다음과 같다.
 
 - 단일 이미지 파일을 생략하면 기존 URL을 유지한다.
 - 하위 목록을 생략하면 기존 목록을 유지한다.
-- 하위 목록을 전달하면 해당 목록 전체를 요청 순서대로 교체한다. 요청에 없는 항목은 삭제된다.
-- 목록 항목의 이미지는 새 파일 → 기존 이미지 URL → `null` 순으로 적용한다. 이미지를 유지하려면 조회 응답의 URL을 `imageUrl`로 함께 보낸다.
-- 이미지 목록(`partnerLogos` 등)에서 파일도 URL도 없는 항목은 건너뛴다. 따라서 `partnerLogos[0].imageUrl=`처럼 빈 항목 하나만 보내면 해당 이미지 목록이 비워진다.
-- 항목 목록(`teams` 등)에서 완전히 빈 항목은 저장하지 않는다. (인덱스를 건너뛰면 중간 항목이 빈 값으로 채워지기 때문) 내용은 있는데 `name`이 없으면 HTTP `400`을 반환한다.
-- 항목 목록(`teams` 등)은 빈 배열을 multipart로 표현할 수 없어, API로는 비울 수 없다. 비워야 하면 DB에서 직접 정리한다.
-- ⚠️ 항목 목록에서 `imageUrl`을 빠뜨리면 해당 항목의 이미지가 `null`로 저장된다. 이미지를 바꾸지 않는 항목도 반드시 `imageUrl`을 보낸다.
-- 기존 이미지 URL은 우리 S3 prefix + `intro/`로 시작해야 하며(`..` 경로 불가), 그 외 URL은 HTTP `400`을 반환한다. 이 검증은 업로드 전에 하므로 URL 검증 실패 시에는 S3에 파일이 남지 않는다. (업로드 이후 단계에서 실패하면 이미 올라간 파일은 남는다)
+- 하위 목록을 전달하면 `id` 기준으로 맞춘다.
+  - `id`가 있는 항목: 해당 항목을 수정한다.
+  - `id`가 없는 항목: 새로 추가한다.
+  - 요청에 없는 기존 항목: 삭제한다.
+  - 노출 순서는 요청 순서를 따른다.
+- 기존 항목의 이미지는 새 파일 → `removeImage=true`면 삭제 → 그 외에는 기존 이미지 유지 순으로 적용한다. 이미지를 바꾸지 않으면 파일을 다시 보낼 필요가 없다.
+- 이미지 목록(`partnerLogos` 등)은 `id`가 있거나 새 파일이 있는 항목만 저장한다. 새 파일을 함께 보내면 해당 이미지를 교체한다.
+- 완전히 빈 항목은 저장하지 않는다. (인덱스를 건너뛰면 중간 항목이 빈 값으로 채워지기 때문) 따라서 빈 항목 하나만 보내면(예: `sponsors[0].id=`) 해당 목록을 비울 수 있다.
+- 내용(`id`, 설명, 파일 등)은 있는데 `name`이 없는 항목은 HTTP `400`을 반환한다.
+- 이 소개의 해당 목록에 없는 `id`나 한 요청 안의 중복 `id`는 HTTP `400`을 반환한다. 소개를 처음 등록할 때는 `id`를 보낼 수 없다.
+- `id`와 이름 검증은 업로드 전에 하므로, 이 검증으로 실패하면 S3에 파일이 남지 않는다. (업로드 이후 단계에서 실패하면 이미 올라간 파일은 남는다)
 - 제거된 `slogan`, `bannerImageFile`을 보내도 무시한다.
 - 최초 등록에서 생략한 선택 필드는 빈 값 또는 빈 목록으로 조회된다.
 - 필수 필드가 누락되거나 enum 값이 잘못되면 HTTP `400`을 반환한다.
@@ -175,7 +183,7 @@ Content-Type: application/json
 - [ ] 어드민 수정 화면은 `GET /admin/introductions`로 초기화
 - [ ] 어드민 저장은 `POST`가 아닌 `PUT /admin/introductions` 사용
 - [ ] 수정하지 않은 단일 이미지와 목록은 요청에서 생략
-- [ ] 목록을 수정할 때는 남길 항목을 모두 전송하고, 이미지를 바꾸지 않는 항목은 조회 응답의 URL을 `imageUrl`로 전송
+- [ ] 목록을 수정할 때는 남길 항목을 모두 전송하고, 기존 항목은 어드민 조회 응답의 `id`를 함께 전송 (이미지는 바꿀 때만 파일 전송)
 - [ ] 이미지 URL은 응답 값을 그대로 `src`에 사용 (전체 URL)
 - [ ] 메인 배너는 프론트 컴포넌트로 구현하고, 모집 상태 문구만 `banner_content` 사용
 - [ ] `banner_cardinal`은 어드민 응답에만 있고 공개 응답에는 없음을 반영

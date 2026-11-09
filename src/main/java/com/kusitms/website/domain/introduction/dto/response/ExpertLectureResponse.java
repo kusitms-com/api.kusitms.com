@@ -11,6 +11,9 @@ import lombok.Getter;
 @Builder
 @Schema
 public class ExpertLectureResponse {
+    @Schema(description = "항목 id (어드민 수정 시 사용)", example = "1")
+    private Long id;
+
 
     @Schema(description = "강연자 이름", example = "김전문")
     private String name;
@@ -27,6 +30,7 @@ public class ExpertLectureResponse {
 
     public static ExpertLectureResponse fromEntity(ExpertLecture expertLecture) {
         return ExpertLectureResponse.builder()
+                .id(expertLecture.getLectureId())
                 .name(expertLecture.getName())
                 .imageLink(S3Util.toUrl(expertLecture.getImageUrl()))
                 .corporation(expertLecture.getCorporation())

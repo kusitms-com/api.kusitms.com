@@ -11,6 +11,9 @@ import lombok.Getter;
 @Builder
 @Schema
 public class ActivityResponse {
+    @Schema(description = "항목 id (어드민 수정 시 사용)", example = "1")
+    private Long id;
+
     @Schema(description = "활동명", example = "밋업데이")
     private String name;
 
@@ -27,6 +30,7 @@ public class ActivityResponse {
 
     public static ActivityResponse fromEntity(Activity activity) {
         return ActivityResponse.builder()
+                .id(activity.getActivityId())
                 .name(activity.getName())
                 .imageUrl1(S3Util.toUrl(activity.getImageUrl1()))
                 .imageUrl2(S3Util.toUrl(activity.getImageUrl2()))
