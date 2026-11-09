@@ -24,10 +24,7 @@ public class Introduction {
     @Column(name = "banner_status")
     @Enumerated(EnumType.STRING)
     private BannerStatus bannerStatus;
-    @Column(name = "slogan", length = 50)
-    private String slogan;
-    @Column(name = "banner_image_url")
-    private String bannerImageUrl;
+    // 배너 문구·이미지(slogan, banner_image_url 컬럼)는 프론트 컴포넌트로 옮겨 매핑하지 않는다
 
     // 학회 정보
     @Column(name = "member_count")
@@ -84,7 +81,7 @@ public class Introduction {
     private List<Sponsor> sponsors = new ArrayList<>();
 
     @Builder
-    public Introduction(Long bannerCardinal, BannerStatus bannerStatus, String slogan, String bannerImageUrl,
+    public Introduction(Long bannerCardinal, BannerStatus bannerStatus,
                         Long memberCount, Long projectCount, Long universityCount,
                         String partnerImageUrl, String introYoutubeLink,
                         String planningImageUrl, String designImageUrl,
@@ -92,8 +89,6 @@ public class Introduction {
     {
         this.bannerCardinal = bannerCardinal;
         this.bannerStatus = bannerStatus;
-        this.slogan = slogan;
-        this.bannerImageUrl = bannerImageUrl;
         this.memberCount = memberCount;
         this.projectCount = projectCount;
         this.universityCount = universityCount;
@@ -105,7 +100,7 @@ public class Introduction {
         this.backendImageUrl = backendImageUrl;
     }
 
-    public void update(Long bannerCardinal, BannerStatus bannerStatus, String slogan, String bannerImageUrl,
+    public void update(Long bannerCardinal, BannerStatus bannerStatus,
                         Long memberCount, Long projectCount, Long universityCount,
                         String partnerImageUrl, String introYoutubeLink,
                         String planningImageUrl, String designImageUrl,
@@ -113,8 +108,6 @@ public class Introduction {
     {
         this.bannerCardinal = bannerCardinal;
         this.bannerStatus = bannerStatus;
-        this.slogan = slogan;
-        this.bannerImageUrl = bannerImageUrl;
         this.memberCount = memberCount;
         this.projectCount = projectCount;
         this.universityCount = universityCount;

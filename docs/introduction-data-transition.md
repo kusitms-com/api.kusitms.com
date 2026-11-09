@@ -26,7 +26,11 @@
 | 공개 사이트 | `GET` | `/api/introductions` | 불필요 | HTTP `404`, code `404` |
 | 어드민 | `GET` | `/admin/introductions` | MANAGER 이상 | HTTP `404`, code `404` |
 
-공개 응답에는 `banner_cardinal`이 없고, 기수가 반영된 `banner_content`가 내려간다. 어드민 응답에는 편집을 위해 `banner_cardinal`이 포함된다.
+공개 응답에는 `banner_cardinal`이 없고, 기수가 반영된 `banner_content`가 내려간다. 어드민 응답에는 편집을 위해 `banner_cardinal`이 포함되고, `banner_status`는 코드값(`CLOSE` 등)으로 내려간다.
+
+이미지 필드는 모두 S3 전체 URL로 내려간다. DB에는 S3 키(`intro/<uuid>파일명`)만 저장하고 응답에서 `aws.s3.prefix`를 붙인다. 업로드하지 않은 이미지는 `null`이다.
+
+메인 배너(문구·배경)는 프론트 컴포넌트로 구현하므로 슬로건과 배너 이미지는 API에서 관리하지 않는다. (`slogan`, `banner_image_url` 컬럼은 남아 있지만 매핑하지 않는다)
 
 ### 등록 및 수정
 
@@ -43,7 +47,6 @@
 | --- | --- | --- |
 | `bannerCardinal` | number | 소개 배너에 표시할 기수 |
 | `bannerStatus` | enum | `CLOSE`, `MANAGE_RECRUIT`, `MEMBER_RECRUIT` |
-| `slogan` | string | 소개 페이지 슬로건 |
 | `memberCount` | number | 누적 학회원 수 |
 | `projectCount` | number | 누적 프로젝트 수 |
 | `universityCount` | number | 참여 대학 수 |
@@ -53,14 +56,30 @@
 
 | 구분 | 필드 |
 | --- | --- |
-| 단일 이미지 | `bannerImageFile`, `planningImage`, `designImage`, `frontendImage`, `backendImage` |
-| 목록 | `teams`, `expertLecture`, `obLecture`, `partnerLogoFiles`, `meetupImages`, `activities`, `sponsors` |
+| 단일 이미지 | `planningImage`, `designImage`, `frontendImage`, `backendImage` |
+| 항목 목록 | `teams`, `expertLecture`, `obLecture`, `activities` |
+| 이미지 목록 | `partnerLogos`, `meetupImages`, `sponsors` (항목마다 `imageFile` 또는 `imageUrl`) |
+
+목록 항목의 이미지 필드는 다음과 같다. `imageUrl` 계열에는 조회 응답의 URL을 그대로 보낸다.
+
+| 목록 | 새 파일 | 기존 이미지 유지 |
+| --- | --- | --- |
+| `teams[i]`, `expertLecture[i]`, `obLecture[i]` | `imageFile` | `imageUrl` |
+| `activities[i]` | `imageFile1`, `imageFile2` | `imageUrl1`, `imageUrl2` |
+| `partnerLogos[i]`, `meetupImages[i]`, `sponsors[i]` | `imageFile` | `imageUrl` |
 
 수정 요청의 적용 규칙은 다음과 같다.
 
 - 단일 이미지 파일을 생략하면 기존 URL을 유지한다.
 - 하위 목록을 생략하면 기존 목록을 유지한다.
-- 하위 목록을 전달하면 해당 목록 전체를 교체한다.
+- 하위 목록을 전달하면 해당 목록 전체를 요청 순서대로 교체한다. 요청에 없는 항목은 삭제된다.
+- 목록 항목의 이미지는 새 파일 → 기존 이미지 URL → `null` 순으로 적용한다. 이미지를 유지하려면 조회 응답의 URL을 `imageUrl`로 함께 보낸다.
+- 이미지 목록(`partnerLogos` 등)에서 파일도 URL도 없는 항목은 건너뛴다. 따라서 `partnerLogos[0].imageUrl=`처럼 빈 항목 하나만 보내면 해당 이미지 목록이 비워진다.
+- 항목 목록(`teams` 등)에서 완전히 빈 항목은 저장하지 않는다. (인덱스를 건너뛰면 중간 항목이 빈 값으로 채워지기 때문) 내용은 있는데 `name`이 없으면 HTTP `400`을 반환한다.
+- 항목 목록(`teams` 등)은 빈 배열을 multipart로 표현할 수 없어, API로는 비울 수 없다. 비워야 하면 DB에서 직접 정리한다.
+- ⚠️ 항목 목록에서 `imageUrl`을 빠뜨리면 해당 항목의 이미지가 `null`로 저장된다. 이미지를 바꾸지 않는 항목도 반드시 `imageUrl`을 보낸다.
+- 기존 이미지 URL은 우리 S3 prefix + `intro/`로 시작해야 하며(`..` 경로 불가), 그 외 URL은 HTTP `400`을 반환한다. 이 검증은 업로드 전에 하므로 URL 검증 실패 시에는 S3에 파일이 남지 않는다. (업로드 이후 단계에서 실패하면 이미 올라간 파일은 남는다)
+- 제거된 `slogan`, `bannerImageFile`을 보내도 무시한다.
 - 최초 등록에서 생략한 선택 필드는 빈 값 또는 빈 목록으로 조회된다.
 - 필수 필드가 누락되거나 enum 값이 잘못되면 HTTP `400`을 반환한다.
 
@@ -72,10 +91,10 @@
 
 기획/PM에게 다음 자료를 한 번에 전달받는다.
 
-- 배너 기수·모집 상태·슬로건
+- 배너 기수·모집 상태 (배너 문구·디자인은 프론트에서 구현)
 - 누적 학회원·프로젝트·대학 수
 - 소개 영상 URL
-- 배너 및 파트별 이미지
+- 파트별 이미지
 - 운영진, 전문가 강연, OB 강연, 활동 목록
 - 파트너사 로고, 밋업 이미지, 후원사 이미지
 - 연락처 및 외부 채널 링크(현재 API 미지원, 아래 "현재 범위에서 남은 사항" 참고)
@@ -115,16 +134,21 @@ MANAGER 이상 계정으로 어드민에 로그인한 뒤 `PUT /admin/introducti
 - `bannerCardinal`: 소개 배너 문구에만 사용한다.
 - `current_cardinal`: 회원가입과 로그인 시 YB/OB 판별에 사용한다.
 
-현재 `current_cardinal`을 수정하는 어드민 API는 없으며, 애플리케이션은 `id = 1`인 행을 조회한다. 행이 없으면 코드상 기본값 `33`을 사용하므로, 34기 전환 시 운영 DB에서 다음 값을 명시적으로 설정해야 한다.
+현재 기수는 OWNER 전용 API로 변경한다. DB를 직접 수정하지 않는다.
 
-```sql
-INSERT INTO current_cardinal (id, cardinal)
-VALUES (1, 34)
-ON CONFLICT (id)
-DO UPDATE SET cardinal = EXCLUDED.cardinal;
+```http
+PUT /admin/owner/current-cardinal
+Content-Type: application/json
+
+{"cardinal": 34}
 ```
 
-변경 후 `GET /api/auth/current-cardinal`의 `data.cardinal`이 `34`인지 확인한다. 이 변경 이후 33기 회원은 다음 로그인 시 OB로 판별되고, 34기 회원은 YB로 판별된다. 관리자 권한인 `authority`에는 영향을 주지 않는다.
+- 다음 기수(+1) 또는 직전 기수(−1, 되돌리기)로만 변경할 수 있고, 같은 값은 변경 없이 성공한다.
+- 변경 즉시 탈퇴 회원을 제외한 전체 회원의 YB/OB를 다시 계산한다. (가입 기수 >= 현재 기수: YB, 그 외: OB)
+- 응답의 `changedToOb`, `changedToYb`로 바뀐 인원을 확인한다.
+- 관리자 권한인 `authority`에는 영향을 주지 않는다.
+
+변경 후 `GET /api/auth/current-cardinal`의 `data.currentCardinal`이 `34`인지 확인한다.
 
 ### 5. 공개 API와 화면 검증
 
@@ -150,8 +174,10 @@ DO UPDATE SET cardinal = EXCLUDED.cardinal;
 - [ ] `404`일 때 임시 하드코딩 데이터를 노출하지 않고 준비 중 화면 또는 명시적인 오류 상태 표시
 - [ ] 어드민 수정 화면은 `GET /admin/introductions`로 초기화
 - [ ] 어드민 저장은 `POST`가 아닌 `PUT /admin/introductions` 사용
-- [ ] 수정하지 않은 이미지와 목록은 요청에서 생략
-- [ ] 목록 전체 변경 시 해당 목록의 모든 항목을 전송
+- [ ] 수정하지 않은 단일 이미지와 목록은 요청에서 생략
+- [ ] 목록을 수정할 때는 남길 항목을 모두 전송하고, 이미지를 바꾸지 않는 항목은 조회 응답의 URL을 `imageUrl`로 전송
+- [ ] 이미지 URL은 응답 값을 그대로 `src`에 사용 (전체 URL)
+- [ ] 메인 배너는 프론트 컴포넌트로 구현하고, 모집 상태 문구만 `banner_content` 사용
 - [ ] `banner_cardinal`은 어드민 응답에만 있고 공개 응답에는 없음을 반영
 
 ## 현재 범위에서 남은 사항
@@ -167,11 +193,11 @@ DO UPDATE SET cardinal = EXCLUDED.cardinal;
 
 ## 완료 기준
 
-- [ ] 34기 확정 자료 수령 및 입력 담당자 지정
-- [ ] 운영 DB 백업 완료
-- [ ] 어드민 API로 34기 소개 데이터 입력 완료
-- [ ] `current_cardinal`을 34로 설정
-- [ ] 공개·어드민·현재 기수 API 검증 완료
+- [ ] 34기 확정 자료 수령 및 입력 담당자 지정 (2026-11-09 1차 수령, 학회 수치·운영팀 설명·주요 활동은 33기 값으로 임시 입력)
+- [x] 운영 DB 백업 완료 (2026-11-09, Heroku 수동 백업)
+- [x] 어드민 API로 34기 소개 데이터 입력 완료 (2026-11-09)
+- [x] `current_cardinal`을 34로 설정 (2026-11-09, YB→OB 1명)
+- [x] 공개·어드민·현재 기수 API 검증 완료 (2026-11-09, 이미지 61개 접근 확인)
 - [ ] 프론트 소개 constants 교체 완료
 - [ ] 연락처 데이터 관리 방식 결정
 - [ ] 작업자·작업 시각·검증 결과 기록
