@@ -21,7 +21,8 @@ public class S3Util {
         if (key == null || key.startsWith("http://") || key.startsWith("https://")) {
             return key;
         }
-        return s3Url + key;
+        // 운영 prefix는 /로 끝나지 않고, 키는 업로드분(intro/...)과 수동 입력분(/meetup/...)이 섞여 있어 /를 하나로 맞춘다
+        return baseUrl() + (key.startsWith("/") ? key.substring(1) : key);
     }
 
     // 응답으로 내려간 URL을 다시 받아 기존 이미지를 유지할 때 사용한다. 우리 버킷 URL만 허용한다
@@ -29,10 +30,15 @@ public class S3Util {
         if (url == null || url.isBlank()) {
             return null;
         }
-        if (!url.startsWith(s3Url)) {
+        String baseUrl = baseUrl();
+        if (!url.startsWith(baseUrl)) {
             throw new IllegalArgumentException("기존 이미지 URL이 올바르지 않습니다: " + url);
         }
-        return url.substring(s3Url.length());
+        return url.substring(baseUrl.length());
+    }
+
+    private static String baseUrl() {
+        return s3Url.endsWith("/") ? s3Url : s3Url + "/";
     }
 
     public static List<String> toUrls(List<String> keys) {
