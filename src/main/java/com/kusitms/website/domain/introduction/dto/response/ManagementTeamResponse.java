@@ -2,6 +2,7 @@ package com.kusitms.website.domain.introduction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.introduction.entity.ManageTeam;
+import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class ManagementTeamResponse {
         return ManagementTeamResponse.builder()
                 .description(manageTeam.getDescription())
                 .name(manageTeam.getName())
-                .imageLink(manageTeam.getImageUrl())
+                .imageLink(S3Util.toUrl(manageTeam.getImageUrl()))
                 .build();
     }
 }

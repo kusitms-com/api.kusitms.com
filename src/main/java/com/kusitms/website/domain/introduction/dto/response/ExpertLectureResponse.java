@@ -2,6 +2,7 @@ package com.kusitms.website.domain.introduction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.introduction.entity.ExpertLecture;
+import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,7 +28,7 @@ public class ExpertLectureResponse {
     public static ExpertLectureResponse fromEntity(ExpertLecture expertLecture) {
         return ExpertLectureResponse.builder()
                 .name(expertLecture.getName())
-                .imageLink(expertLecture.getImageUrl())
+                .imageLink(S3Util.toUrl(expertLecture.getImageUrl()))
                 .corporation(expertLecture.getCorporation())
                 .description(expertLecture.getDescription())
                 .build();
