@@ -3,8 +3,11 @@ package com.kusitms.website.global.util;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +47,24 @@ class S3UtilTest {
         S3Util.s3Url = prefix;
 
         assertThat(S3Util.toKey(S3Util.toUrl("intro/a.png"))).isEqualTo("intro/a.png");
+    }
+
+    @ParameterizedTest(name = "key=[{0}]")
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    @DisplayName("키가 없거나 비어 있으면 버킷 루트 URL이 아니라 null을 반환한다")
+    void toUrlReturnsNullForBlankKey(String key) {
+        S3Util.s3Url = "https://bucket.test";
+
+        assertThat(S3Util.toUrl(key)).isNull();
+    }
+
+    @Test
+    @DisplayName("prefix가 주입되지 않은 환경에서도 예외 없이 동작한다")
+    void toUrlWithoutPrefix() {
+        S3Util.s3Url = null;
+
+        assertThat(S3Util.toUrl("intro/a.png")).isEqualTo("/intro/a.png");
     }
 
     @ParameterizedTest(name = "url={0}")

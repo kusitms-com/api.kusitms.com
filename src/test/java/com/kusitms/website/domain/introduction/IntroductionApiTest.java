@@ -4,7 +4,6 @@ import com.kusitms.website.domain.file.service.S3Service;
 import com.kusitms.website.domain.introduction.entity.BannerStatus;
 import com.kusitms.website.domain.introduction.entity.Introduction;
 import com.kusitms.website.domain.introduction.repository.IntroRepository;
-import com.kusitms.website.global.util.S3Util;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +47,9 @@ class IntroductionApiTest {
 
     @MockBean
     S3Service s3Service;
+
+    // 테스트 설정의 aws.s3.prefix(test)에 구분자 /를 붙인 값. S3Util로 만들지 않고 고정해 URL 형식 자체를 검증한다
+    private static final String S3_PREFIX = "test/";
 
     @Test
     @DisplayName("소개 정보가 없으면 공개 조회 API는 404를 반환한다")
@@ -112,18 +114,18 @@ class IntroductionApiTest {
 
         mockMvc.perform(get("/api/introductions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.planning_image_url").value(S3Util.toUrl("intro/planning.png")))
+                .andExpect(jsonPath("$.data.planning_image_url").value(S3_PREFIX + "intro/planning.png"))
                 .andExpect(jsonPath("$.data.design_image_url").doesNotExist())
-                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(S3Util.toUrl("intro/verty.png")))
-                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3Util.toUrl("intro/team.jpg")))
-                .andExpect(jsonPath("$.data.activities[0].image_url1").value(S3Util.toUrl("intro/ot.webp")))
+                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(S3_PREFIX + "intro/verty.png"))
+                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3_PREFIX + "intro/team.jpg"))
+                .andExpect(jsonPath("$.data.activities[0].image_url1").value(S3_PREFIX + "intro/ot.webp"))
                 .andExpect(jsonPath("$.data.activities[0].image_url2").doesNotExist());
 
         mockMvc.perform(get("/admin/introductions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.planning_image_url").value(S3Util.toUrl("intro/planning.png")))
-                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(S3Util.toUrl("intro/verty.png")))
-                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3Util.toUrl("intro/team.jpg")));
+                .andExpect(jsonPath("$.data.planning_image_url").value(S3_PREFIX + "intro/planning.png"))
+                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(S3_PREFIX + "intro/verty.png"))
+                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3_PREFIX + "intro/team.jpg"));
     }
 
     @Test
@@ -149,9 +151,9 @@ class IntroductionApiTest {
                         .file(new MockMultipartFile("partnerLogos[2].imageFile", "gabia.png", "image/png", "g".getBytes()))
                         .param("teams[0].name", "학부학")
                         .param("teams[0].description", "수정된 설명")
-                        .param("teams[0].imageUrl", S3Util.toUrl("intro/team0.jpg"))
-                        .param("partnerLogos[0].imageUrl", S3Util.toUrl("intro/verty.png"))
-                        .param("partnerLogos[1].imageUrl", S3Util.toUrl("intro/lg.png")))
+                        .param("teams[0].imageUrl", S3_PREFIX + "intro/team0.jpg")
+                        .param("partnerLogos[0].imageUrl", S3_PREFIX + "intro/verty.png")
+                        .param("partnerLogos[1].imageUrl", S3_PREFIX + "intro/lg.png"))
                 .andExpect(status().isOk());
         clearPersistenceContext();
 
@@ -159,11 +161,11 @@ class IntroductionApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.teams.length()").value(1))
                 .andExpect(jsonPath("$.data.teams[0].description").value("수정된 설명"))
-                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3Util.toUrl("intro/team0.jpg")))
+                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3_PREFIX + "intro/team0.jpg"))
                 .andExpect(jsonPath("$.data.partner_logo_urls.length()").value(3))
-                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(S3Util.toUrl("intro/verty.png")))
-                .andExpect(jsonPath("$.data.partner_logo_urls[1]").value(S3Util.toUrl("intro/lg.png")))
-                .andExpect(jsonPath("$.data.partner_logo_urls[2]").value(S3Util.toUrl("intro/gabia.png")));
+                .andExpect(jsonPath("$.data.partner_logo_urls[0]").value(S3_PREFIX + "intro/verty.png"))
+                .andExpect(jsonPath("$.data.partner_logo_urls[1]").value(S3_PREFIX + "intro/lg.png"))
+                .andExpect(jsonPath("$.data.partner_logo_urls[2]").value(S3_PREFIX + "intro/gabia.png"));
 
         // DB에는 URL이 아닌 키로 저장한다
         Introduction introduction = introRepository.findFirstByOrderByIntroductionIdAsc().orElseThrow();
@@ -191,7 +193,7 @@ class IntroductionApiTest {
     @DisplayName("우리 버킷이라도 소개 이미지 폴더가 아닌 URL은 400을 반환한다")
     void putIntroductionRejectsNonIntroImageUrl() throws Exception {
         mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", S3Util.toUrl("profile/member.png")))
+                        .param("sponsors[0].imageUrl", S3_PREFIX + "profile/member.png"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -200,10 +202,10 @@ class IntroductionApiTest {
     @DisplayName("경로에 ..가 들어간 기존 이미지 URL은 400을 반환한다")
     void putIntroductionRejectsTraversalImageUrl() throws Exception {
         mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", S3Util.toUrl("intro/../recruit/x.png")))
+                        .param("sponsors[0].imageUrl", S3_PREFIX + "intro/../recruit/x.png"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", S3Util.toUrl("intro/%2E%2e/recruit/x.png")))
+                        .param("sponsors[0].imageUrl", S3_PREFIX + "intro/%2E%2e/recruit/x.png"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -212,7 +214,7 @@ class IntroductionApiTest {
     @DisplayName("파일명 안의 ..는 경로 이동이 아니므로 기존 이미지로 유지할 수 있다")
     void putIntroductionAllowsDotsInFileName() throws Exception {
         mockMvc.perform(validRequest(34, 1400, 320, 80)
-                        .param("sponsors[0].imageUrl", S3Util.toUrl("intro/uuidlogo..v2.png")))
+                        .param("sponsors[0].imageUrl", S3_PREFIX + "intro/uuidlogo..v2.png"))
                 .andExpect(status().isOk());
     }
 
@@ -242,7 +244,7 @@ class IntroductionApiTest {
         clearPersistenceContext();
 
         mockMvc.perform(get("/admin/introductions"))
-                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3Util.toUrl("intro/new.jpg")));
+                .andExpect(jsonPath("$.data.teams[0].image_link").value(S3_PREFIX + "intro/new.jpg"));
     }
 
     @Test
@@ -280,7 +282,7 @@ class IntroductionApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.planning_image_url")
                         .value("https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/legacy.png"))
-                .andExpect(jsonPath("$.data.design_image_url").value(S3Util.toUrl("intro/design.png")));
+                .andExpect(jsonPath("$.data.design_image_url").value(S3_PREFIX + "intro/design.png"));
     }
 
     @Test
