@@ -26,13 +26,25 @@ public class ManageTeam {
     private String imageUrl;
     private String description;
 
+    // 요청 순서대로 노출하기 위한 정렬값. 이 컬럼이 생기기 전 행은 null이라 id 순으로 정렬된다
+    @Column(name = "display_order")
+    private Integer displayOrder;
+
     @Builder
     public ManageTeam(Introduction introduction, String name,
-                      String imageUrl, String description) {
+                      String imageUrl, String description, Integer displayOrder) {
         this.introduction = introduction;
         introduction.getManageTeam().add(this);
         this.name = name;
         this.imageUrl = imageUrl;
         this.description = description;
+        this.displayOrder = displayOrder;
+    }
+
+    public void update(String name, String description, String imageUrl, Integer displayOrder) {
+        this.name = name;
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.displayOrder = displayOrder;
     }
 }

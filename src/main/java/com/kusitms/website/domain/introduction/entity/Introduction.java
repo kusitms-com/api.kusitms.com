@@ -54,30 +54,37 @@ public class Introduction {
 
     // 운영진 소개
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, teamId ASC")
     private List<ManageTeam> manageTeam = new ArrayList<>();
 
     // 전문가 초청 강연자
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, lectureId ASC")
     private List<ExpertLecture> expertLecture = new ArrayList<>();
 
     // OB 초청 강연자
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, lectureId ASC")
     private List<OBLecture> obLecture = new ArrayList<>();
 
     // 파트너사 로고 목록 (배열)
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, partnerLogoId ASC")
     private List<PartnerLogo> partnerLogos = new ArrayList<>();
 
     // 밋업 이미지 목록
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, meetupImageId ASC")
     private List<IntroMeetupImage> meetupImages = new ArrayList<>();
 
     // 활동 소개
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, activityId ASC")
     private List<Activity> activities = new ArrayList<>();
 
     // 후원사
     @OneToMany(mappedBy = "introduction", cascade = CascadeType.ALL)
+    @OrderBy("displayOrder ASC, sponsorId ASC")
     private List<Sponsor> sponsors = new ArrayList<>();
 
     @Builder

@@ -11,6 +11,9 @@ import lombok.Getter;
 @Builder
 @Schema
 public class OBLectureResponse {
+    @Schema(description = "항목 id (어드민 수정 시 사용)", example = "1")
+    private Long id;
+
 
     @Schema(description = "강연자 이름", example = "김오비")
     private String name;
@@ -24,6 +27,7 @@ public class OBLectureResponse {
 
     public static OBLectureResponse fromEntity(OBLecture obLecture) {
         return OBLectureResponse.builder()
+                .id(obLecture.getLectureId())
                 .name(obLecture.getName())
                 .imageLink(S3Util.toUrl(obLecture.getImageUrl()))
                 .topic(obLecture.getTopic())

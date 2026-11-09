@@ -28,25 +28,13 @@ public class S3Util {
         return baseUrl() + (key.startsWith("/") ? key.substring(1) : key);
     }
 
-    // 응답으로 내려간 URL을 다시 받아 기존 이미지를 유지할 때 사용한다. 우리 버킷 URL만 허용한다
-    public static String toKey(String url) {
-        if (url == null || url.isBlank()) {
-            return null;
-        }
-        String baseUrl = baseUrl();
-        if (!url.startsWith(baseUrl)) {
-            throw new IllegalArgumentException("기존 이미지 URL이 올바르지 않습니다: " + url);
-        }
-        return url.substring(baseUrl.length());
+    public static List<String> toUrls(List<String> keys) {
+        return keys.stream().map(S3Util::toUrl).collect(Collectors.toList());
     }
 
     private static String baseUrl() {
         // Spring 없이 쓰는 단위 테스트에서는 prefix가 주입되지 않을 수 있다
         String prefix = s3Url == null ? "" : s3Url;
         return prefix.endsWith("/") ? prefix : prefix + "/";
-    }
-
-    public static List<String> toUrls(List<String> keys) {
-        return keys.stream().map(S3Util::toUrl).collect(Collectors.toList());
     }
 }

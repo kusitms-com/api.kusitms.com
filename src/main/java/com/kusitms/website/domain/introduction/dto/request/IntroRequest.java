@@ -51,25 +51,25 @@ public class IntroRequest {
     @Schema(description = "백엔드 이미지 파일 (수정 시 생략하면 기존 이미지 유지)")
     private MultipartFile backendImage;
 
-    @Schema(description = "학회 운영진 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
+    @Schema(description = "학회 운영진 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 수정·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<ManagementTeamRequest> teams;
 
-    @Schema(description = "전문가 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
+    @Schema(description = "전문가 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 수정·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<ExpertLectureRequest> expertLecture;
 
-    @Schema(description = "OB 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
+    @Schema(description = "OB 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 수정·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<OBLectureRequest> obLecture;
 
-    @Schema(description = "파트너사(기업 프로젝트) 로고 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 순서대로 전체 교체)")
+    @Schema(description = "파트너사(기업 프로젝트) 로고 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 유지·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<IntroImageRequest> partnerLogos;
 
-    @Schema(description = "밋업 이미지 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 순서대로 전체 교체)")
+    @Schema(description = "밋업 이미지 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 유지·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<IntroImageRequest> meetupImages;
 
-    @Schema(description = "활동 소개 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
+    @Schema(description = "활동 소개 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 수정·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<ActivityRequest> activities;
 
-    @Schema(description = "후원사 로고 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 순서대로 전체 교체)")
+    @Schema(description = "후원사 로고 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 id 기준으로 유지·추가하고 빠진 항목은 삭제, 요청 순서대로 정렬)")
     private List<IntroImageRequest> sponsors;
 
     public static Introduction from(IntroRequest request, String partnerImageUrl,

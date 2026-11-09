@@ -23,9 +23,19 @@ public class PartnerLogo {
     @Column(name = "image_url")
     private String imageUrl;
 
+    // 요청 순서대로 노출하기 위한 정렬값. 이 컬럼이 생기기 전 행은 null이라 id 순으로 정렬된다
+    @Column(name = "display_order")
+    private Integer displayOrder;
+
     @Builder
-    public PartnerLogo(Introduction introduction, String imageUrl) {
+    public PartnerLogo(Introduction introduction, String imageUrl, Integer displayOrder) {
         this.introduction = introduction;
         this.imageUrl = imageUrl;
+        this.displayOrder = displayOrder;
+    }
+
+    public void update(String imageUrl, Integer displayOrder) {
+        this.imageUrl = imageUrl;
+        this.displayOrder = displayOrder;
     }
 }

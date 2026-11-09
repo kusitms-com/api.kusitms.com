@@ -11,6 +11,9 @@ import lombok.Getter;
 @Builder
 @Schema
 public class ManagementTeamResponse {
+    @Schema(description = "항목 id (어드민 수정 시 사용)", example = "1")
+    private Long id;
+
     @Schema(description = "운영진 팀 이름", example = "학부학")
     private String name;
 
@@ -23,6 +26,7 @@ public class ManagementTeamResponse {
 
     public static ManagementTeamResponse fromEntity(ManageTeam manageTeam) {
         return ManagementTeamResponse.builder()
+                .id(manageTeam.getTeamId())
                 .description(manageTeam.getDescription())
                 .name(manageTeam.getName())
                 .imageLink(S3Util.toUrl(manageTeam.getImageUrl()))
