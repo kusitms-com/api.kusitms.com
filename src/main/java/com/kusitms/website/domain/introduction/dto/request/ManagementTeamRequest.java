@@ -19,6 +19,9 @@ public class ManagementTeamRequest {
     @Schema(description = "운영진 이미지 파일")
     private MultipartFile imageFile;
 
+    @Schema(description = "유지할 기존 운영진 이미지 URL (새 파일이 없으면 이 이미지를 유지, 조회 응답의 값 그대로)", example = "https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/image.png")
+    private String imageUrl;
+
     @Schema(description = "운영진 팀 소개", example = "학부학은 ~을 관리합니다.")
     private String description;
 

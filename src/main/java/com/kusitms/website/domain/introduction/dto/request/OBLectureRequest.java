@@ -20,6 +20,9 @@ public class OBLectureRequest {
     @Schema(description = "강연자 프로필 사진 파일")
     private MultipartFile imageFile;
 
+    @Schema(description = "유지할 기존 강연자 프로필 URL (새 파일이 없으면 이 이미지를 유지, 조회 응답의 값 그대로)", example = "https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/image.png")
+    private String imageUrl;
+
     @JsonProperty("topic")
     @Schema(description = "강연 주제", example = "큐시즘 바로 알기")
     private String topic;

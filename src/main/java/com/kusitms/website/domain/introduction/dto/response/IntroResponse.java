@@ -21,13 +21,6 @@ public class IntroResponse {
     @Schema(description = "배너 내용", example = "KUSITMS 27기 리크루팅 종료")
     private String bannerContent;
 
-    @Schema(description = "슬로건")
-    private String slogan;
-
-    @JsonProperty("banner_image_url")
-    @Schema(description = "배너 이미지 URL")
-    private String bannerImageUrl;
-
     @JsonProperty("member_count")
     @Schema(description = "누적 학회원 수", example = "1432")
     private Long memberCount;
@@ -99,8 +92,6 @@ public class IntroResponse {
                 .bannerContent(introduction.getBannerStatus() != null
                         ? "KUSITMS" + introduction.getBannerCardinal() + "기 " + introduction.getBannerStatus().getContent()
                         : null)
-                .slogan(introduction.getSlogan())
-                .bannerImageUrl(S3Util.toUrl(introduction.getBannerImageUrl()))
                 .memberCount(introduction.getMemberCount())
                 .projectCount(introduction.getProjectCount())
                 .universityCount(introduction.getUniversityCount())

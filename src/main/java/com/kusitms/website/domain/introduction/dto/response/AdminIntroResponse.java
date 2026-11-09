@@ -21,13 +21,6 @@ public class AdminIntroResponse {
     @Schema(description = "배너 상태")
     private String bannerStatus;
 
-    @Schema(description = "슬로건")
-    private String slogan;
-
-    @JsonProperty("banner_image_url")
-    @Schema(description = "배너 이미지 URL")
-    private String bannerImageUrl;
-
     @JsonProperty("member_count")
     @Schema(description = "누적 학회원 수")
     private Long memberCount;
@@ -97,8 +90,6 @@ public class AdminIntroResponse {
         return AdminIntroResponse.builder()
                 .bannerCardinal(intro.getBannerCardinal())
                 .bannerStatus(intro.getBannerStatus() != null ? intro.getBannerStatus().name() : null)
-                .slogan(intro.getSlogan())
-                .bannerImageUrl(S3Util.toUrl(intro.getBannerImageUrl()))
                 .memberCount(intro.getMemberCount())
                 .projectCount(intro.getProjectCount())
                 .universityCount(intro.getUniversityCount())

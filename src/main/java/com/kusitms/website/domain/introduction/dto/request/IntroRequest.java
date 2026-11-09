@@ -23,13 +23,6 @@ public class IntroRequest {
     @Schema(description = "배너 상태 (대문자 영문 코드)", example = "CLOSE", required = true)
     private BannerStatus bannerStatus;
 
-    @NotBlank(message = "슬로건은 필수입니다.")
-    @Schema(description = "슬로건", example = "큐시즘, 함께 성장하는 IT 학회", required = true)
-    private String slogan;
-
-    @Schema(description = "배너 이미지 파일 (수정 시 생략하면 기존 이미지 유지)")
-    private MultipartFile bannerImageFile;
-
     @NotNull(message = "누적 학회원 수는 필수입니다.")
     @Schema(description = "누적 학회원 수", example = "1432", required = true)
     private Long memberCount;
@@ -58,36 +51,33 @@ public class IntroRequest {
     @Schema(description = "백엔드 이미지 파일 (수정 시 생략하면 기존 이미지 유지)")
     private MultipartFile backendImage;
 
-    @Schema(description = "학회 운영진 소개 (수정 시 생략하면 기존 목록 유지)")
+    @Schema(description = "학회 운영진 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
     private List<ManagementTeamRequest> teams;
 
-    @Schema(description = "전문가 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지)")
+    @Schema(description = "전문가 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
     private List<ExpertLectureRequest> expertLecture;
 
-    @Schema(description = "OB 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지)")
+    @Schema(description = "OB 초청 강연자 소개 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
     private List<OBLectureRequest> obLecture;
 
-    @Schema(description = "파트너사 로고 이미지 파일 목록 (수정 시 생략하면 기존 목록 유지)")
-    private List<MultipartFile> partnerLogoFiles;
+    @Schema(description = "파트너사(기업 프로젝트) 로고 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 순서대로 전체 교체)")
+    private List<IntroImageRequest> partnerLogos;
 
-    @Schema(description = "밋업 이미지 파일 목록 (수정 시 생략하면 기존 목록 유지)")
-    private List<MultipartFile> meetupImages;
+    @Schema(description = "밋업 이미지 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 순서대로 전체 교체)")
+    private List<IntroImageRequest> meetupImages;
 
-    @Schema(description = "활동 소개 목록 (수정 시 생략하면 기존 목록 유지)")
+    @Schema(description = "활동 소개 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 목록 전체 교체. 항목 이미지는 새 파일이 없으면 imageUrl의 기존 이미지 유지)")
     private List<ActivityRequest> activities;
 
-    @Schema(description = "후원사 이미지 파일 목록 (수정 시 생략하면 기존 목록 유지)")
-    private List<MultipartFile> sponsors;
+    @Schema(description = "후원사 로고 목록 (수정 시 생략하면 기존 목록 유지, 전달하면 순서대로 전체 교체)")
+    private List<IntroImageRequest> sponsors;
 
     public static Introduction from(IntroRequest request, String partnerImageUrl,
-                                     String bannerImageUrl,
                                      String planningImageUrl, String designImageUrl,
                                      String frontendImageUrl, String backendImageUrl) {
         return Introduction.builder()
                 .bannerCardinal(request.getBannerCardinal())
                 .bannerStatus(request.getBannerStatus())
-                .slogan(request.getSlogan())
-                .bannerImageUrl(bannerImageUrl)
                 .memberCount(request.getMemberCount())
                 .projectCount(request.getProjectCount())
                 .universityCount(request.getUniversityCount())

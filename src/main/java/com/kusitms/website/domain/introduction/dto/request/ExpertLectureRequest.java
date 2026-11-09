@@ -18,6 +18,9 @@ public class ExpertLectureRequest {
     @Schema(description = "강연자 프로필 파일")
     private MultipartFile imageFile;
 
+    @Schema(description = "유지할 기존 강연자 프로필 URL (새 파일이 없으면 이 이미지를 유지, 조회 응답의 값 그대로)", example = "https://kusitms-bucket.s3.ap-northeast-2.amazonaws.com/intro/image.png")
+    private String imageUrl;
+
     @Schema(description = "강연자 소속 기업", example = "현 큐시즘")
     private String corporation;
 

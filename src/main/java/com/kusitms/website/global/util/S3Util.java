@@ -24,6 +24,17 @@ public class S3Util {
         return s3Url + key;
     }
 
+    // 응답으로 내려간 URL을 다시 받아 기존 이미지를 유지할 때 사용한다. 우리 버킷 URL만 허용한다
+    public static String toKey(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        if (!url.startsWith(s3Url)) {
+            throw new IllegalArgumentException("기존 이미지 URL이 올바르지 않습니다: " + url);
+        }
+        return url.substring(s3Url.length());
+    }
+
     public static List<String> toUrls(List<String> keys) {
         return keys.stream().map(S3Util::toUrl).collect(Collectors.toList());
     }
