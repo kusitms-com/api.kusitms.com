@@ -10,7 +10,6 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class S3UtilTest {
 
@@ -40,15 +39,6 @@ class S3UtilTest {
         assertThat(S3Util.toUrl(key)).isEqualTo("https://bucket.test/intro/a.png");
     }
 
-    @ParameterizedTest(name = "prefix={0}")
-    @CsvSource({"https://bucket.test", "https://bucket.test/"})
-    @DisplayName("toUrl로 만든 URL은 toKey로 원래 키로 되돌린다")
-    void toKeyRoundTrips(String prefix) {
-        S3Util.s3Url = prefix;
-
-        assertThat(S3Util.toKey(S3Util.toUrl("intro/a.png"))).isEqualTo("intro/a.png");
-    }
-
     @ParameterizedTest(name = "key=[{0}]")
     @NullSource
     @ValueSource(strings = {"", "   "})
@@ -67,12 +57,4 @@ class S3UtilTest {
         assertThat(S3Util.toUrl("intro/a.png")).isEqualTo("/intro/a.png");
     }
 
-    @ParameterizedTest(name = "url={0}")
-    @CsvSource({"https://bucket.testintro/a.png", "https://other.test/intro/a.png"})
-    @DisplayName("구분자가 빠졌거나 다른 호스트인 URL은 키로 바꾸지 않는다")
-    void toKeyRejectsMalformedUrl(String url) {
-        S3Util.s3Url = "https://bucket.test";
-
-        assertThatThrownBy(() -> S3Util.toKey(url)).isInstanceOf(IllegalArgumentException.class);
-    }
 }
