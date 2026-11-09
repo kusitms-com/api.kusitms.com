@@ -2,6 +2,7 @@ package com.kusitms.website.domain.introduction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.introduction.entity.Introduction;
+import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -99,22 +100,22 @@ public class IntroResponse {
                         ? "KUSITMS" + introduction.getBannerCardinal() + "기 " + introduction.getBannerStatus().getContent()
                         : null)
                 .slogan(introduction.getSlogan())
-                .bannerImageUrl(introduction.getBannerImageUrl())
+                .bannerImageUrl(S3Util.toUrl(introduction.getBannerImageUrl()))
                 .memberCount(introduction.getMemberCount())
                 .projectCount(introduction.getProjectCount())
                 .universityCount(introduction.getUniversityCount())
                 .introYoutubeLink(introduction.getIntroYoutubeLink())
-                .planningImageUrl(introduction.getPlanningImageUrl())
-                .designImageUrl(introduction.getDesignImageUrl())
-                .frontendImageUrl(introduction.getFrontendImageUrl())
-                .backendImageUrl(introduction.getBackendImageUrl())
-                .partnerLogoUrls(partnerLogoUrls)
-                .meetupImageUrls(meetupImageUrls)
+                .planningImageUrl(S3Util.toUrl(introduction.getPlanningImageUrl()))
+                .designImageUrl(S3Util.toUrl(introduction.getDesignImageUrl()))
+                .frontendImageUrl(S3Util.toUrl(introduction.getFrontendImageUrl()))
+                .backendImageUrl(S3Util.toUrl(introduction.getBackendImageUrl()))
+                .partnerLogoUrls(S3Util.toUrls(partnerLogoUrls))
+                .meetupImageUrls(S3Util.toUrls(meetupImageUrls))
                 .teams(managementTeam)
                 .expertLecture(expertLecture)
                 .obLecture(obLecture)
                 .activities(activities)
-                .sponsorImageUrls(sponsorImageUrls)
+                .sponsorImageUrls(S3Util.toUrls(sponsorImageUrls))
                 .build();
     }
 }

@@ -2,6 +2,7 @@ package com.kusitms.website.domain.introduction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.introduction.entity.Introduction;
+import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -97,22 +98,22 @@ public class AdminIntroResponse {
                 .bannerCardinal(intro.getBannerCardinal())
                 .bannerStatus(intro.getBannerStatus() != null ? intro.getBannerStatus().name() : null)
                 .slogan(intro.getSlogan())
-                .bannerImageUrl(intro.getBannerImageUrl())
+                .bannerImageUrl(S3Util.toUrl(intro.getBannerImageUrl()))
                 .memberCount(intro.getMemberCount())
                 .projectCount(intro.getProjectCount())
                 .universityCount(intro.getUniversityCount())
                 .introYoutubeLink(intro.getIntroYoutubeLink())
-                .planningImageUrl(intro.getPlanningImageUrl())
-                .designImageUrl(intro.getDesignImageUrl())
-                .frontendImageUrl(intro.getFrontendImageUrl())
-                .backendImageUrl(intro.getBackendImageUrl())
-                .partnerLogoUrls(partnerLogoUrls)
-                .meetupImageUrls(meetupImageUrls)
+                .planningImageUrl(S3Util.toUrl(intro.getPlanningImageUrl()))
+                .designImageUrl(S3Util.toUrl(intro.getDesignImageUrl()))
+                .frontendImageUrl(S3Util.toUrl(intro.getFrontendImageUrl()))
+                .backendImageUrl(S3Util.toUrl(intro.getBackendImageUrl()))
+                .partnerLogoUrls(S3Util.toUrls(partnerLogoUrls))
+                .meetupImageUrls(S3Util.toUrls(meetupImageUrls))
                 .activities(activities)
                 .teams(teams)
                 .expertLecture(expertLecture)
                 .obLecture(obLecture)
-                .sponsorImageUrls(sponsorImageUrls)
+                .sponsorImageUrls(S3Util.toUrls(sponsorImageUrls))
                 .build();
     }
 }

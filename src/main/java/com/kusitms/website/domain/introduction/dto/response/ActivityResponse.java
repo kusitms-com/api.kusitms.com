@@ -2,6 +2,7 @@ package com.kusitms.website.domain.introduction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kusitms.website.domain.introduction.entity.Activity;
+import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,8 +28,8 @@ public class ActivityResponse {
     public static ActivityResponse fromEntity(Activity activity) {
         return ActivityResponse.builder()
                 .name(activity.getName())
-                .imageUrl1(activity.getImageUrl1())
-                .imageUrl2(activity.getImageUrl2())
+                .imageUrl1(S3Util.toUrl(activity.getImageUrl1()))
+                .imageUrl2(S3Util.toUrl(activity.getImageUrl2()))
                 .description(activity.getDescription())
                 .build();
     }
