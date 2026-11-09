@@ -5,7 +5,7 @@ import com.kusitms.website.domain.admin.entity.TMPBlogReview;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
-import static com.kusitms.website.global.util.S3Util.s3Url;
+import com.kusitms.website.global.util.S3Util;
 
 @Getter
 @Schema
@@ -40,7 +40,7 @@ public class BlogReviewDetailResponse {
         this.cardinal = blogReview.getCardinal();
         this.part = blogReview.getPart() == null ? null : blogReview.getPart().name();
         this.activity = blogReview.getActivity() == null ? null : blogReview.getActivity().name();
-        this.thumbnailUrl = blogReview.getThumbnailUrl() == null ? null : s3Url + blogReview.getThumbnailUrl();
+        this.thumbnailUrl = S3Util.toUrl(blogReview.getThumbnailUrl());
         this.blogLink = blogReview.getBlogLink();
         this.title = blogReview.getTitle();
         this.previewText = blogReview.getPreviewText();

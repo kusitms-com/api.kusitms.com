@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.kusitms.website.global.util.S3Util.s3Url;
+import com.kusitms.website.global.util.S3Util;
 
 @Getter
 @Schema
@@ -43,8 +43,8 @@ public class CorporateDetailResponse {
         this.cardinal = corporate.getCardinal();
         this.name = corporate.getName();
         this.content = corporate.getContent();
-        this.logoUrl = s3Url + corporate.getLogoUrl();
-        this.bannerUrl = s3Url + corporate.getBannerUrl();
+        this.logoUrl = S3Util.toUrl(corporate.getLogoUrl());
+        this.bannerUrl = S3Util.toUrl(corporate.getBannerUrl());
         this.category = splitCategory(corporate.getCategory());
     }
 
