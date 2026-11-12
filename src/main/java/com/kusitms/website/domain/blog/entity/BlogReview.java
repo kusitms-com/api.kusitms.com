@@ -1,4 +1,4 @@
-package com.kusitms.website.domain.admin.entity;
+package com.kusitms.website.domain.blog.entity;
 
 import com.kusitms.website.domain.project.entity.Team;
 import lombok.AccessLevel;
@@ -11,7 +11,8 @@ import javax.persistence.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TMPBlogReview {
+@Table(name = "blog_review")
+public class BlogReview {
     @Id
     @Column(name = "blog_review_id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +26,8 @@ public class TMPBlogReview {
     @Enumerated(EnumType.STRING)
     private BlogReviewActivity activity;
 
-    @Column(name = "thumbnail_url")
+    // 기존 blog_post에서 이관한 외부 이미지 URL도 담을 수 있도록 링크와 같은 길이로 둔다
+    @Column(name = "thumbnail_url", length = 2048)
     private String thumbnailUrl;
 
     @Column(name = "blog_link", length = 2048)
@@ -37,8 +39,8 @@ public class TMPBlogReview {
     private String previewText;
 
     @Builder
-    public TMPBlogReview(Integer cardinal, Team part, BlogReviewActivity activity,
-                         String thumbnailUrl, String blogLink, String title, String previewText) {
+    public BlogReview(Integer cardinal, Team part, BlogReviewActivity activity,
+                      String thumbnailUrl, String blogLink, String title, String previewText) {
         this.cardinal = cardinal;
         this.part = part;
         this.activity = activity;

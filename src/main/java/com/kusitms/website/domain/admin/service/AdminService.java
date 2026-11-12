@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.admin.service;
 
-import com.kusitms.website.domain.admin.entity.TMPBlogReview;
-import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
+import com.kusitms.website.domain.blog.entity.BlogReview;
+import com.kusitms.website.domain.blog.repository.BlogReviewRepository;
 import com.kusitms.website.domain.blog.dto.response.BlogReviewDetailResponse;
 import com.kusitms.website.domain.blog.dto.response.BlogReviewResponse;
 import com.kusitms.website.domain.blog.dto.request.BlogReviewRequest;
@@ -45,11 +45,11 @@ public class AdminService {
     private final MeetupRepository meetupRepository;
     private final TagRepository tagRepository;
     private final ReviewRepository reviewRepository;
-    private final TMPBlogReviewRepository blogReviewRepository;
+    private final BlogReviewRepository blogReviewRepository;
 
     @Transactional(readOnly = true)
     public BlogReviewResponse getBlogReviews() {
-        List<TMPBlogReview> findBlogReviews = blogReviewRepository.findAllByOrderByBlogReviewIdDesc();
+        List<BlogReview> findBlogReviews = blogReviewRepository.findAllByOrderByBlogReviewIdDesc();
 
         List<BlogReviewDetailResponse> blogReviewDetails = findBlogReviews.stream()
                 .map(BlogReviewDetailResponse::new)
@@ -68,13 +68,13 @@ public class AdminService {
             thumbnailUrl = s3Service.uploadFile(request.getThumbnailFile(), "blog-review");
         }
 
-        TMPBlogReview blogReview = BlogReviewRequest.from(request, thumbnailUrl);
+        BlogReview blogReview = BlogReviewRequest.from(request, thumbnailUrl);
         blogReviewRepository.save(blogReview);
     }
 
     @Transactional
     public void updateBlogReview(BlogReviewRequest request) {
-        TMPBlogReview blogReview = blogReviewRepository.findById(request.getBlogReviewId()).orElseThrow();
+        BlogReview blogReview = blogReviewRepository.findById(request.getBlogReviewId()).orElseThrow();
 
         String thumbnailUrl = blogReview.getThumbnailUrl();
         if (request.getThumbnailFile() != null && !request.getThumbnailFile().isEmpty()) {

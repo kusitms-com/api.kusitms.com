@@ -1,15 +1,12 @@
 package com.kusitms.website.domain.blog.controller;
 
 import com.kusitms.website.domain.blog.dto.response.BlogResponse;
-import com.kusitms.website.domain.blog.entity.BlogPost;
 import com.kusitms.website.domain.blog.entity.Category;
 import com.kusitms.website.domain.blog.entity.Position;
-//import com.kusitms.website.domain.blog.service.BlogService;
 import com.kusitms.website.domain.blog.service.BlogService;
-import com.kusitms.website.domain.project.dto.response.MeetupDetailResponse;
-import com.kusitms.website.domain.project.dto.response.MeetupResponse;
 import com.kusitms.website.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/blogs")
 @RequiredArgsConstructor
@@ -35,16 +30,17 @@ public class BlogController {
     private final BlogService blogService;
 
     @GetMapping("")
-    @Operation(summary = "블로그 리스트 조회", description = "기수, 파트, 카테고리 조건으로 블로그 리스트를 조회합니다.")
+    @Operation(summary = "블로그 리스트 조회", description = "어드민에서 등록한 블로그 후기를 기수, 파트, 카테고리 조건으로 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = MeetupResponse.class))),
-            @ApiResponse(responseCode = "200", description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = MeetupDetailResponse.class)))
+                    content = @Content(schema = @Schema(implementation = BlogResponse.class)))
     })
     public ResponseEntity<BaseResponse> getBlogList(
+            @Parameter(description = "기수", example = "33")
             @RequestParam(required = false) Integer generation,
+            @Parameter(description = "파트 (PLAN: 기획)")
             @RequestParam(required = false) Position position,
+            @Parameter(description = "활동 (DOCUMENT: 서류 후기, INTERVIEW: 면접 후기, GIFT: 기업 프로젝트, MEETUP: 밋업 프로젝트, GROUP_TF: 활동 후기)")
             @RequestParam(required = false) Category category,
             Pageable pageable
     ) {
