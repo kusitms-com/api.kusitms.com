@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.blog.dto.request;
 
-import com.kusitms.website.domain.admin.entity.BlogReviewActivity;
-import com.kusitms.website.domain.admin.entity.TMPBlogReview;
+import com.kusitms.website.domain.blog.entity.BlogReview;
+import com.kusitms.website.domain.blog.entity.BlogReviewActivity;
 import com.kusitms.website.domain.project.entity.Team;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -36,8 +36,8 @@ public class BlogReviewRequest {
     @Schema(description = "미리보기 텍스트", example = "합격에 도움이 됐던 준비 과정을 공유합니다.")
     private String previewText;
 
-    public static TMPBlogReview from(BlogReviewRequest request, String thumbnailUrl) {
-        return TMPBlogReview.builder()
+    public static BlogReview from(BlogReviewRequest request, String thumbnailUrl) {
+        return BlogReview.builder()
                 .cardinal(request.getCardinal())
                 .part(request.getPart())
                 .activity(request.getActivity())

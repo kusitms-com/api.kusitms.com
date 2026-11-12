@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.blog.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kusitms.website.domain.admin.entity.TMPBlogReview;
+import com.kusitms.website.domain.blog.entity.BlogReview;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -35,7 +35,7 @@ public class BlogReviewDetailResponse {
     @Schema(description = "미리보기 텍스트")
     private String previewText;
 
-    public BlogReviewDetailResponse(TMPBlogReview blogReview) {
+    public BlogReviewDetailResponse(BlogReview blogReview) {
         this.blogReviewId = blogReview.getBlogReviewId();
         this.cardinal = blogReview.getCardinal();
         this.part = blogReview.getPart() == null ? null : blogReview.getPart().name();

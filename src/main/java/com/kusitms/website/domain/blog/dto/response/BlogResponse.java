@@ -1,18 +1,18 @@
 package com.kusitms.website.domain.blog.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.kusitms.website.domain.blog.entity.BlogAuthor;
-import com.kusitms.website.domain.blog.entity.BlogPost;
-import com.kusitms.website.domain.blog.entity.Category;
-import com.querydsl.core.annotations.QueryProjection;
+import com.kusitms.website.domain.blog.entity.BlogReview;
+import com.kusitms.website.domain.blog.entity.BlogReviewActivity;
+import com.kusitms.website.domain.blog.entity.Position;
+import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
-import javax.persistence.*;
-
+// 홈페이지 스토리 응답. blog_review로 옮기면서도 기존 필드명은 그대로 유지한다 (#92)
 @Getter
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class BlogResponse {
     @JsonProperty("blog_post_id")
     @Schema(description = "블로그 글 아이디")
@@ -32,26 +32,16 @@ public class BlogResponse {
     @Schema(description = "파트명")
     private String position;
 
-    @QueryProjection
-    public BlogResponse(Long id,
-                        String title,
-                        String address,
-                        String imageAddress,
-                        String content,
-                        String categoryName,
-                        Integer cardinal,
-                        String position) {
-        this.id = id;
-        this.title = title;
-        this.address = address;
-        this.imageAddress = imageAddress;
-        this.content = content;
-        this.categoryName = categoryName;
-        this.cardinal = cardinal;
-        this.position = position;
+    public static BlogResponse from(BlogReview blogReview) {
+        return BlogResponse.builder()
+                .id(blogReview.getBlogReviewId())
+                .title(blogReview.getTitle())
+                .address(blogReview.getBlogLink())
+                .imageAddress(S3Util.toUrl(blogReview.getThumbnailUrl()))
+                .content(blogReview.getPreviewText())
+                .categoryName(BlogReviewActivity.descriptionOf(blogReview.getActivity()))
+                .cardinal(blogReview.getCardinal())
+                .position(Position.descriptionOf(blogReview.getPart()))
+                .build();
     }
-
-
-
-
 }

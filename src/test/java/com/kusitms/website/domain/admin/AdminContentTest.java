@@ -1,7 +1,7 @@
 package com.kusitms.website.domain.admin;
 
-import com.kusitms.website.domain.admin.entity.BlogReviewActivity;
-import com.kusitms.website.domain.admin.repository.TMPBlogReviewRepository;
+import com.kusitms.website.domain.blog.entity.BlogReviewActivity;
+import com.kusitms.website.domain.blog.repository.BlogReviewRepository;
 import com.kusitms.website.domain.file.service.S3Service;
 import com.kusitms.website.domain.project.entity.CorporateProject;
 import com.kusitms.website.domain.project.entity.MeetupProject;
@@ -59,7 +59,7 @@ class AdminContentTest {
     @Autowired MeetupTeamRepository meetupTeamRepository;
     @Autowired TagRepository tagRepository;
     @Autowired ReviewRepository reviewRepository;
-    @Autowired TMPBlogReviewRepository blogReviewRepository;
+    @Autowired BlogReviewRepository blogReviewRepository;
 
     @MockBean S3Service s3Service;
 

@@ -209,7 +209,7 @@ public class AdminController {
     }
 
     @GetMapping("/admin/blog-review")
-    @Operation(summary = "블로그 후기 리스트(test db)", description = "블로그 후기의 모든 리스트를 조회합니다.")
+    @Operation(summary = "블로그 후기 리스트", description = "블로그 후기의 모든 리스트를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -219,7 +219,7 @@ public class AdminController {
     }
 
     @PostMapping(value = "/admin/blog-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "블로그 후기 등록(test db)", description = "블로그 후기를 등록합니다.")
+    @Operation(summary = "블로그 후기 등록", description = "블로그 후기를 등록합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "등록 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -230,7 +230,7 @@ public class AdminController {
     }
 
     @PutMapping(value = "/admin/blog-review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "블로그 후기 수정(test db)", description = "블로그 후기를 수정합니다.")
+    @Operation(summary = "블로그 후기 수정", description = "블로그 후기를 수정합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
@@ -241,7 +241,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/admin/blog-review/{id}")
-    @Operation(summary = "블로그 후기 삭제(test db)", description = "블로그 후기를 삭제합니다.")
+    @Operation(summary = "블로그 후기 삭제", description = "블로그 후기를 삭제합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "삭제 성공"),
             @ApiResponse(responseCode = "500", description = "INTER SERVER ERROR", content = @Content(schema = @Schema(implementation = BaseResponse.class))),
