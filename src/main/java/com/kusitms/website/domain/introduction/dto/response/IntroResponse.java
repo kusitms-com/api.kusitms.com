@@ -14,11 +14,11 @@ import java.util.List;
 @Schema
 public class IntroResponse {
     @JsonProperty("banner_status")
-    @Schema(description = "배너 상태", example = "모집 마감/운영진 모집/학회원 모집")
+    @Schema(description = "배너 상태", example = "모집 마감/모집 예정/운영진 모집/학회원 모집")
     private String bannerStatus;
 
     @JsonProperty("banner_content")
-    @Schema(description = "배너 내용", example = "KUSITMS 27기 리크루팅 종료")
+    @Schema(description = "배너 내용", example = "KUSITMS 35기 모집 예정")
     private String bannerContent;
 
     @JsonProperty("member_count")
@@ -90,7 +90,7 @@ public class IntroResponse {
         return IntroResponse.builder()
                 .bannerStatus(introduction.getBannerStatus() != null ? introduction.getBannerStatus().getName() : null)
                 .bannerContent(introduction.getBannerStatus() != null
-                        ? "KUSITMS" + introduction.getBannerCardinal() + "기 " + introduction.getBannerStatus().getContent()
+                        ? "KUSITMS " + introduction.getBannerCardinal() + "기 " + introduction.getBannerStatus().getContent()
                         : null)
                 .memberCount(introduction.getMemberCount())
                 .projectCount(introduction.getProjectCount())

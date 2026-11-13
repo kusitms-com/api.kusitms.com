@@ -1,6 +1,7 @@
 package com.kusitms.website.domain.introduction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kusitms.website.domain.introduction.entity.BannerStatus;
 import com.kusitms.website.domain.introduction.entity.Introduction;
 import com.kusitms.website.global.util.S3Util;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,7 +19,7 @@ public class AdminIntroResponse {
     private Long bannerCardinal;
 
     @JsonProperty("banner_status")
-    @Schema(description = "배너 상태")
+    @Schema(description = "배너 상태 코드", implementation = BannerStatus.class)
     private String bannerStatus;
 
     @JsonProperty("member_count")

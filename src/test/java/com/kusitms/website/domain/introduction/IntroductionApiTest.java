@@ -89,9 +89,26 @@ class IntroductionApiTest {
 
         mockMvc.perform(get("/api/introductions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.banner_content").value("KUSITMS35기 리크루팅 종료"))
+                .andExpect(jsonPath("$.data.banner_content").value("KUSITMS 35기 리크루팅 종료"))
                 .andExpect(jsonPath("$.data.slogan").doesNotExist())
                 .andExpect(jsonPath("$.data.banner_image_url").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    @DisplayName("모집 예정 상태를 저장하면 공개 조회는 한글 상태명과 배너 문구를, 어드민 조회는 코드값을 반환한다")
+    void putIntroductionWithUpcomingRecruit() throws Exception {
+        mockMvc.perform(validRequest(35, 1500, 350, 85, "UPCOMING_RECRUIT"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/introductions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.banner_status").value("모집 예정"))
+                .andExpect(jsonPath("$.data.banner_content").value("KUSITMS 35기 모집 예정"));
+
+        mockMvc.perform(get("/admin/introductions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.banner_status").value("UPCOMING_RECRUIT"));
     }
 
     @Test
@@ -391,9 +408,19 @@ class IntroductionApiTest {
             int projectCount,
             int universityCount
     ) {
+        return validRequest(cardinal, memberCount, projectCount, universityCount, "CLOSE");
+    }
+
+    private MockMultipartHttpServletRequestBuilder validRequest(
+            int cardinal,
+            int memberCount,
+            int projectCount,
+            int universityCount,
+            String bannerStatus
+    ) {
         MockMultipartHttpServletRequestBuilder request = multipart(HttpMethod.PUT, "/admin/introductions");
         request.param("bannerCardinal", String.valueOf(cardinal))
-                .param("bannerStatus", "CLOSE")
+                .param("bannerStatus", bannerStatus)
                 .param("memberCount", String.valueOf(memberCount))
                 .param("projectCount", String.valueOf(projectCount))
                 .param("universityCount", String.valueOf(universityCount))

@@ -24,7 +24,7 @@ public class SignUpRequest {
     @Schema(description = "휴대폰 번호. 010으로 시작하는 11자리 (하이픈 포함 가능)", example = "010-1234-5678", required = true)
     private String phone;
 
-    @Schema(description = "활동 기수. 33기 이하는 certificateImage(수료증) 필수", example = "34", required = true)
+    @Schema(description = "활동 기수. 현재 기수보다 이전 기수면 certificateImage(수료증) 필수", example = "34", required = true)
     private Integer cardinal;
 
     @Schema(description = "파트", example = "BACKEND", required = true, allowableValues = {"PLANNER", "DESIGNER", "FRONTEND", "BACKEND"})

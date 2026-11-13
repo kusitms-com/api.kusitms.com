@@ -2,6 +2,7 @@ package com.kusitms.website.domain.introduction.entity;
 
 public enum BannerStatus {
     CLOSE("모집 마감", "리크루팅 종료"),
+    UPCOMING_RECRUIT("모집 예정", "모집 예정"),
     MANAGE_RECRUIT("운영진 모집", "운영진 모집 중"),
     MEMBER_RECRUIT("학회원 모집", "학회원 모집 중")
     ;

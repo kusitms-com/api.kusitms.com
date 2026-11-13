@@ -48,7 +48,7 @@
 | 필드 | 형식 | 설명 |
 | --- | --- | --- |
 | `bannerCardinal` | number | 소개 배너에 표시할 기수 |
-| `bannerStatus` | enum | `CLOSE`, `MANAGE_RECRUIT`, `MEMBER_RECRUIT` |
+| `bannerStatus` | enum | `CLOSE`(모집 마감), `UPCOMING_RECRUIT`(모집 예정), `MANAGE_RECRUIT`(운영진 모집), `MEMBER_RECRUIT`(학회원 모집) |
 | `memberCount` | number | 누적 학회원 수 |
 | `projectCount` | number | 누적 프로젝트 수 |
 | `universityCount` | number | 참여 대학 수 |
