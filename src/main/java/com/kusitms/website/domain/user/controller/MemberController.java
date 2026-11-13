@@ -74,7 +74,7 @@ public class MemberController {
             @RequestPart("signUpRequest") @Valid SignUpRequest request,
             @Parameter(description = "프로필 사진 (jpg/jpeg/png, 최대 10MB)", required = true)
             @RequestPart("profileImage") MultipartFile profileImage,
-            @Parameter(description = "수료증 이미지 (jpg/jpeg/png, 최대 10MB). cardinal이 33 이하면 필수")
+            @Parameter(description = "수료증 이미지 (jpg/jpeg/png, 최대 10MB). cardinal이 현재 기수보다 이전 기수면 필수")
             @RequestPart(value = "certificateImage", required = false) MultipartFile certificateImage
     ) {
         Long userId = memberService.signup(request, profileImage, certificateImage);
